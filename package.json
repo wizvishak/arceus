@@ -1,0 +1,22 @@
+{
+    "name": "discord-term",
+    "version": "1.0.0",
+    "description": "",
+    "main": "dist/app.js",
+    "scripts": {
+        "build": "tsc",
+        "start": "npm run build && node dist/app.js"
+    },
+    "keywords": [
+        "discord"
+    ],
+    "author": "CloudRex <cloudrex@outlook.com>",
+    "license": "MIT",
+    "dependencies": {
+        "@types/blessed": "^0.1.10",
+        "@types/node": "^10.12.1",
+        "blessed": "^0.1.81",
+        "chalk": "^2.4.1",
+        "discord.js": "^11.4.2"
+    }
+}
