@@ -18,5 +18,8 @@
         "blessed": "^0.1.81",
         "chalk": "^2.4.1",
         "discord.js": "^11.4.2"
+    },
+    "devDependencies": {
+        "typescript": "^3.1.4"
     }
 }
