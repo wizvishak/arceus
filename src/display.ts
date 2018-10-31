@@ -1,4 +1,4 @@
-import {TextChannel, Guild, Client, Message} from "discord.js";
+import {TextChannel, Guild, Client, Message, Channel} from "discord.js";
 import Utils from "./utils";
 import blessed, {Widgets} from "blessed";
 import chalk from "chalk";
@@ -52,7 +52,7 @@ const defaultAppOptions: IAppOptions = {
             top: "0%",
             left: "25%",
             width: "75%+2",
-            height: `96%`,
+            height: "100%-3",
 
             style: {
                 fg: "white",
@@ -67,7 +67,7 @@ const defaultAppOptions: IAppOptions = {
         channels: blessed.box({
             top: "0%",
             left: "0%",
-            height: `96%`,
+            height: "100%",
             width: "25%",
             scrollable: true,
             padding: 1,
@@ -94,10 +94,12 @@ const defaultAppOptions: IAppOptions = {
                 bg: "lightgray"
             },
         
+            left: "25%",
             bottom: "0",
             width: "100%",
             inputOnFocus: true,
-            height: "shrink"
+            height: "shrink",
+            padding: 1
         })
     }
 };
@@ -330,15 +332,62 @@ export default class Display {
         return this;
     }
 
-    public shutdown(): void {
+    public shutdown(code: number = 0): void {
         this.stopTyping();
         this.saveStateSync();
-        process.exit(0);
+        process.exit(code);
+    }
+
+    public renderChannels(): this {
+        if (this.state.guild) {
+            this.options.nodes.channels.children = [];
+
+            const channels: TextChannel[] = this.state.guild.channels.array().filter((channel: Channel) => channel.type === "text") as TextChannel[];
+
+            for (let i: number = 0; i < channels.length; i++) {
+                const channelNode: Widgets.BoxElement = blessed.box({
+                    style: {
+                        bg: "black",
+                        fg: "white",
+
+                        // TODO: Not working
+                        bold: this.state.channel !== undefined && this.state.channel.id === channels[i].id,
+    
+                        hover: {
+                            bg: "gray"
+                        }
+                    },
+                    
+                    content: `#${channels[i].name}`,
+                    width: "100%-2",
+                    height: "shrink",
+                    top: i,
+                    left: "0%",
+                    clickable: true
+                });
+
+                channelNode.on("click", () => {
+                    if (this.state.guild && this.state.channel && channels[i].id !== this.state.channel.id && this.state.guild.channels.has(channels[i].id)) {
+                        this.setActiveChannel(channels[i]);
+                    }
+                });
+
+                this.options.nodes.channels.append(channelNode);
+            }
+
+            this.render();
+        }
+
+        return this;
     }
 
     private setupInternalCommands(): this {
         this.commands.set("login", (args: string[]) => {
             this.login(args[0]);
+        });
+
+        this.commands.set("logout", () => {
+            this.shutdown();
         });
 
         this.commands.set("now", () => {
@@ -436,7 +485,21 @@ export default class Display {
         return this;
     }
 
-    public saveStateSync(): void {
+    private updateTitle(): this {
+        if (this.state.guild && this.state.channel) {
+            this.options.screen.title = `Discord Terminal @ ${this.state.guild.name} # ${this.state.channel.name}`;
+        }
+        else if (this.state.guild) {
+            this.options.screen.title = `Discord Terminal @ ${this.state.guild.name}`;
+        }
+        else {
+            this.options.screen.title = "Discord Terminal";
+        }
+
+        return this;
+    }
+
+    public saveStateSync(): this {
         this.appendSystemMessage("Saving application state ...");
 
         fs.writeFileSync(this.options.stateFilePath, JSON.stringify({
@@ -448,6 +511,8 @@ export default class Display {
         }));
 
         this.appendSystemMessage(`Application state saved @ '${this.options.stateFilePath}'`);
+
+        return this;
     }
 
     public login(token: string): this {
@@ -487,16 +552,21 @@ export default class Display {
             this.appendSystemMessage(`Warning: Guild '${this.state.guild.name}' doesn't have any text channels`);
         }
 
+        this.updateTitle();
+        this.renderChannels();
+
         return this;
     }
 
     public setActiveChannel(channel: TextChannel): this {
         this.state.channel = channel;
+        this.updateTitle();
         this.appendSystemMessage(`Switched to channel '{bold}${this.state.channel.name}{/bold}'`);
 
         return this;
     }
 
+    // TODO: Also include time
     public appendMessage(sender: string, message: string, color = "white"): this {
         this.options.nodes.messages.pushLine(this.state.messageFormat
             .replace("{sender}", ((chalk as any)[color] as any)(sender))
