@@ -1,5 +1,5 @@
-import blessed from "blessed";
-import {Client, Message, Snowflake, Channel, TextChannel} from "discord.js";
+import blessed, {widget} from "blessed";
+import {Client, Message, Snowflake, Channel, TextChannel, Guild} from "discord.js";
 import chalk from "chalk";
 
 const client: Client = new Client();
@@ -24,11 +24,14 @@ let lastPinger: Snowflake | null = null;
 let gm: boolean = false;
 let bots: boolean = true;
 let ignoreNonAlpha: boolean = false;
+let activeGuild: Guild;
 
 const maxLines: number = 50;
 
 // Client events
 client.on("ready", () => {
+    setActiveGuild(client.guilds.first());
+    renderChannels();
     addSysMsg(`Successfully conntected as ${client.user.tag}`);
 });
 
@@ -86,7 +89,7 @@ function addMsg(sender: string, msg: string): void {
 }
 
 function addSysMsg(msg: string): void {
-    addMsg(chalk.green("System"), msg);
+    addMsg(chalk.green("{bold}System{/bold}"), msg);
 }
 
 // Create a screen object.
@@ -99,15 +102,42 @@ screen.title = "Discord Terminal";
 // Create a box perfectly centered horizontally and vertically.
 var messages = blessed.box({
     top: "0%",
-    width: "100%",
-    height: `95%`,
+    left: "25%",
+    width: "75%+2",
+    height: `96%`,
 
     style: {
         fg: "white",
         bg: "gray"
     },
 
-    scrollable: true
+    scrollable: true,
+    tags: true,
+    padding: 1
+});
+
+var channels = blessed.box({
+    top: "0%",
+    left: "0%",
+    height: `96%`,
+    width: "25%",
+    scrollable: true,
+    padding: 1,
+
+    style: {
+        item: {
+            bg: "gray",
+            fg: "white"
+        },
+
+        selected: {
+            bg: "gray",
+            fg: "white"
+        },
+
+        fg: "white",
+        bg: "black"
+    } as any
 });
 
 var textbox = blessed.textbox({
@@ -123,6 +153,7 @@ var textbox = blessed.textbox({
 });
 
 // Append our box to the screen.
+screen.append(channels);
 screen.append(messages);
 screen.append(textbox);
 
@@ -161,12 +192,18 @@ textbox.key("enter", () => {
 
             case "channel": {
                 if (client.channels.has(args[0])) {
-                    state.channel = args[0];
-                    addSysMsg(`Set channel to ${state.channel}`);
+                    setActiveChannel(args[0]);
                 }
                 else {
                     addSysMsg("That channel does not exist");
                 }
+
+                break;
+            }
+
+            case "guild": {
+                // TODO: Ensure guild exists
+                setActiveGuild(client.guilds.get(args[0]) as Guild);
 
                 break;
             }
@@ -276,6 +313,49 @@ textbox.key("up", () => {
     }
 });
 
+function renderChannels(render: boolean = false): void {
+    //channels.clearItems();
+
+    const chans: Channel[] = activeGuild.channels.array();
+
+    let chanCounter: number = 0;
+
+    for (let i: number = 0; i < chans.length; i++) {
+        if (chans[i].type === "text") {
+            const chan: TextChannel = chans[i] as TextChannel;
+
+            const channelNode = blessed.box({
+                style: {
+                    bg: "black",
+                    fg: "white",
+
+                    hover: {
+                        bg: "gray"
+                    }
+                },
+                
+                content: `#${chan.name}`,
+                width: "100%-2",
+                height: "shrink",
+                top: chanCounter,
+                left: "0%",
+                clickable: true
+            });
+
+            channelNode.on("click", () => {
+                setActiveChannel(chan.id);
+            });
+
+            channels.append(channelNode);
+            chanCounter++;
+        }
+    }
+
+    if (render) {
+        screen.render();
+    }
+}
+
 function sendToChannel(message: string): void {
     if (state.channel === undefined || !client.channels.has(state.channel)) {
         return;
@@ -313,6 +393,29 @@ function clearMessageInput(): void {
     screen.render();
 }
 
+function setActiveChannel(channelId: Snowflake, render: boolean = false): void {
+    state.channel = channelId;
+    addSysMsg(`Switched to channel '${(client.channels.get(state.channel) as TextChannel).name}'`);
+
+    if (render) {
+        screen.render();
+    }
+}
+
+function setActiveGuild(nGuild: Guild): void {
+    const general: TextChannel = nGuild.channels.find((channel: Channel) => channel.type === "text" && (channel as TextChannel).name === "general") as TextChannel;
+
+    if (general) {
+        setActiveChannel(general.id);
+    }
+    else {
+        setActiveChannel(nGuild.channels.first().id);
+    }
+
+    activeGuild = nGuild;
+    addSysMsg(`Switched to guild '${nGuild.name}'`);
+}
+
 textbox.focus();
 
 if (process.env.TOKEN) {
@@ -321,8 +424,6 @@ if (process.env.TOKEN) {
     client.login(process.env.TOKEN).catch((error: Error) => {
         addSysMsg(`Login failed: ${error.message}`);
     });
-
-    textbox.setValue("/channel ");
 }
 else {
     addSysMsg("Welcome! Use /login <token> to login.");
