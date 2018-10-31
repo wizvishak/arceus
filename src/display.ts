@@ -232,6 +232,21 @@ export default class Display {
         // Input
         this.options.nodes.input.on("keypress", this.startTyping.bind(this));
 
+        this.options.nodes.input.key("tab", () => {
+            const rawInput: string = this.getInput();
+            const input: string = rawInput.substr(this.options.commandPrefix.length);
+
+            if (rawInput.startsWith(this.options.commandPrefix) && input.length >= 2 && input.indexOf(" ") === -1) {
+                for (let [name, handler] of this.commands) {
+                    if (name.startsWith(input)) {
+                        this.clearInput(`${this.options.commandPrefix}${name} `);
+
+                        break;
+                    }
+                }
+            }
+        });
+
         this.options.nodes.input.key("enter", () => {
             const input: string = this.getInput(true);
 
@@ -317,7 +332,7 @@ export default class Display {
             this.clearInput();
         }
 
-        return value;
+        return value.trim();
     }
 
     public clearInput(newValue: string = ""): this {
