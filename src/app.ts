@@ -94,7 +94,8 @@ function addSysMsg(msg: string): void {
 
 // Create a screen object.
 var screen = blessed.screen({
-    smartCSR: true
+    smartCSR: true,
+    fullUnicode: true
 });
 
 screen.title = "Discord Terminal";
@@ -269,6 +270,12 @@ textbox.key("enter", () => {
                 break;
             }
 
+            case "render": {
+                screen.realloc();
+
+                break;
+            }
+
             case "global": {
                 gm = !gm;
 
@@ -313,8 +320,8 @@ textbox.key("up", () => {
     }
 });
 
-function renderChannels(render: boolean = false): void {
-    //channels.clearItems();
+function renderChannels(render: boolean = true): void {
+    channels.children = [];
 
     const chans: Channel[] = activeGuild.channels.array();
 
@@ -352,6 +359,7 @@ function renderChannels(render: boolean = false): void {
     }
 
     if (render) {
+        screen.realloc();
         screen.render();
     }
 }
@@ -412,7 +420,9 @@ function setActiveGuild(nGuild: Guild): void {
         setActiveChannel(nGuild.channels.first().id);
     }
 
+    screen.title = `Discord Terminal @ ${nGuild.name}`;
     activeGuild = nGuild;
+    renderChannels();
     addSysMsg(`Switched to guild '${nGuild.name}'`);
 }
 
