@@ -2,6 +2,7 @@ import {TextChannel, Guild, Client, Message} from "discord.js";
 import Utils from "./utils";
 import blessed, {Widgets} from "blessed";
 import chalk from "chalk";
+import fs from "fs";
 
 export type IAppState = {
     channel?: TextChannel;
@@ -24,6 +25,7 @@ export type IAppOptions = {
     readonly nodes: IAppNodes;
     readonly commandPrefix: string;
     readonly messageFormat: string;
+    readonly stateFilePath: string;
 }
 
 const defaultAppState: IAppState = {
@@ -37,6 +39,7 @@ const defaultAppOptions: IAppOptions = {
     maxMessages: 50,
     commandPrefix: "/",
     messageFormat: "<{sender}>: {message}",
+    stateFilePath: "state.json",
 
     screen: blessed.screen({
         // TODO:
@@ -281,6 +284,18 @@ export default class Display {
             else {
                 this.appendSystemMessage("Muted mode is no longer activated");
             }
+        });
+
+        this.commands.set("save", () => {
+            this.appendSystemMessage("Saving application state ...");
+
+            fs.writeFileSync(this.options.stateFilePath, JSON.stringify({
+                ...this.state,
+                guild: undefined,
+                channel: undefined
+            }));
+
+            this.appendSystemMessage(`Application state saved @ '${this.options.stateFilePath}'`);
         });
 
         this.commands.set("global", () => {
