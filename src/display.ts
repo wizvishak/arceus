@@ -163,7 +163,7 @@ export default class Display {
             this.state.lastMessage = msg;
         }
 
-        if (this.state.ignoreBots && msg.author.bot) {
+        if (this.state.ignoreBots && msg.author.bot && msg.author.id !== this.client.user.id) {
             return;
         }
         else if (this.state.ignoreEmptyMessages && !msg.content) {
