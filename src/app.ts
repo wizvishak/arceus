@@ -1,8 +1,6 @@
 import Display from "./display";
 
-const app: Display = new Display(undefined, new Map(), {
-    messageFormat: "{sender} ~> {message}"
-});
+const app: Display = new Display();
 
 async function init(): Promise<void> {
     await app.setup();
