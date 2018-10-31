@@ -18,6 +18,8 @@ export type IAppState = {
     ignoreEmptyMessages: boolean;
     muted: boolean;
     messageFormat: string;
+    lastMessage?: Message;
+    typingTimeout?: NodeJS.Timeout;
 }
 
 export type IAppOptions = {
@@ -136,35 +138,8 @@ export default class Display {
             }
         });
 
-        this.client.on("message", (msg: Message) => {
-            if (this.state.ignoreBots && msg.author.bot) {
-                return;
-            }
-            else if (this.state.ignoreEmptyMessages && !msg.content) {
-                return;
-            }
-            else if (msg.author.id === this.client.user.id) {
-                this.appendSelfMessage(this.client.user.tag, msg.content);
-            }
-            else if (this.state.guild && this.state.channel && msg.channel.id === this.state.channel.id) {
-                const modifiers: string[] = [];
-
-                if (msg.guild && msg.member) {
-                    if (msg.member.hasPermission("MANAGE_MESSAGES")) {
-                        modifiers.push(chalk.red("+"));
-                    }
-
-                    if (msg.member.hasPermission("MANAGE_GUILD")) {
-                        modifiers.push(chalk.red("$"));
-                    }
-                }
-
-                this.appendUserMessage(msg.author.tag, msg.content, modifiers);
-            }
-            else if (this.state.globalMessages) {
-                this.appendSpecialMessage("Global", msg.author.tag, msg.content);
-            }
-        });
+        this.client.on("message", this.handleMessage.bind(this));
+        this.client.on("messageUpdate", this.handleMessage.bind(this));
 
         // Append Nodes
         this.options.screen.append(this.options.nodes.input);
@@ -179,6 +154,40 @@ export default class Display {
         }
 
         return this;
+    }
+
+    private handleMessage(msg: Message): void {
+        if (msg.author.id === this.client.user.id) {
+            this.state.lastMessage = msg;
+        }
+
+        if (this.state.ignoreBots && msg.author.bot) {
+            return;
+        }
+        else if (this.state.ignoreEmptyMessages && !msg.content) {
+            return;
+        }
+        else if (msg.author.id === this.client.user.id) {
+            this.appendSelfMessage(this.client.user.tag, msg.content);
+        }
+        else if (this.state.guild && this.state.channel && msg.channel.id === this.state.channel.id) {
+            const modifiers: string[] = [];
+
+            if (msg.guild && msg.member) {
+                if (msg.member.hasPermission("MANAGE_MESSAGES")) {
+                    modifiers.push(chalk.red("+"));
+                }
+
+                if (msg.member.hasPermission("MANAGE_GUILD")) {
+                    modifiers.push(chalk.red("$"));
+                }
+            }
+
+            this.appendUserMessage(msg.author.tag, msg.content, modifiers);
+        }
+        else if (this.state.globalMessages) {
+            this.appendSpecialMessage("Global", msg.author.tag, msg.content);
+        }
     }
 
     private async syncState(): Promise<boolean> {
@@ -219,6 +228,8 @@ export default class Display {
         });
 
         // Input
+        this.options.nodes.input.on("keypress", this.startTyping.bind(this));
+
         this.options.nodes.input.key("enter", () => {
             const input: string = this.getInput(true);
 
@@ -258,6 +269,12 @@ export default class Display {
             }
         });
 
+        this.options.nodes.input.key("up", () => {
+            if (this.state.lastMessage) {
+                this.clearInput(`${this.options.commandPrefix}edit ${this.state.lastMessage.id} ${this.state.lastMessage.content}`);
+            }
+        });
+
         this.options.nodes.input.key("C-c", () => {
             this.shutdown();
         });
@@ -265,6 +282,28 @@ export default class Display {
         this.options.nodes.input.key("C-x", () => {
             process.exit(0);
         });
+
+        return this;
+    }
+
+    public startTyping(): this {
+        if (this.state.guild && this.state.channel && this.state.typingTimeout === undefined) {
+            this.state.channel.startTyping();
+
+            this.state.typingTimeout = setTimeout(() => {
+                this.stopTyping();
+            }, 10000);
+        }
+
+        return this;
+    }
+
+    public stopTyping(): this {
+        if (this.state.guild && this.state.channel && this.state.typingTimeout !== undefined) {
+            clearTimeout(this.state.typingTimeout);
+            this.state.typingTimeout = undefined;
+            this.state.channel.stopTyping();
+        }
 
         return this;
     }
@@ -292,6 +331,7 @@ export default class Display {
     }
 
     public shutdown(): void {
+        this.stopTyping();
         this.saveStateSync();
         process.exit(0);
     }
@@ -321,6 +361,22 @@ export default class Display {
             }
             else {
                 this.appendSystemMessage("Muted mode is no longer activated");
+            }
+        });
+
+        this.commands.set("edit", async (args: string[]) => {
+            // TODO: Display message
+            if (!args[0] || !args[1] || !this.state.channel) {
+                return;
+            }
+
+            const message: Message = await this.state.channel.fetchMessage(args[0]) as Message;
+
+            if (message && message.editable) {
+                await message.edit(args.slice(1).join(" "));
+            }
+            else {
+                this.appendSystemMessage("That message doesn't exist or it is not editable");
             }
         });
 
@@ -386,7 +442,9 @@ export default class Display {
         fs.writeFileSync(this.options.stateFilePath, JSON.stringify({
             ...this.state,
             guild: undefined,
-            channel: undefined
+            channel: undefined,
+            lastMessage: undefined,
+            typingTimeout: undefined
         }));
 
         this.appendSystemMessage(`Application state saved @ '${this.options.stateFilePath}'`);
