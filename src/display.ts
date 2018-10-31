@@ -4,6 +4,12 @@ import blessed, {Widgets} from "blessed";
 import chalk from "chalk";
 import fs from "fs";
 
+export type IAppNodes = {
+    readonly messages: Widgets.BoxElement;
+    readonly channels: Widgets.BoxElement;
+    readonly input: Widgets.TextboxElement;
+}
+
 export type IAppState = {
     channel?: TextChannel;
     guild?: Guild;
@@ -11,12 +17,7 @@ export type IAppState = {
     ignoreBots: boolean;
     ignoreEmptyMessages: boolean;
     muted: boolean;
-}
-
-export type IAppNodes = {
-    readonly messages: Widgets.BoxElement;
-    readonly channels: Widgets.BoxElement;
-    readonly input: Widgets.TextboxElement;
+    messageFormat: string;
 }
 
 export type IAppOptions = {
@@ -24,7 +25,6 @@ export type IAppOptions = {
     readonly screen: Widgets.Screen
     readonly nodes: IAppNodes;
     readonly commandPrefix: string;
-    readonly messageFormat: string;
     readonly stateFilePath: string;
 }
 
@@ -32,13 +32,13 @@ const defaultAppState: IAppState = {
     globalMessages: false,
     ignoreBots: false,
     ignoreEmptyMessages: true,
-    muted: false
+    muted: false,
+    messageFormat: "<{sender}>: {message}"
 };
 
 const defaultAppOptions: IAppOptions = {
     maxMessages: 50,
     commandPrefix: "/",
-    messageFormat: "<{sender}>: {message}",
     stateFilePath: "state.json",
 
     screen: blessed.screen({
@@ -58,7 +58,6 @@ const defaultAppOptions: IAppOptions = {
             },
 
             scrollable: true,
-            alwaysScroll: true,
             tags: true,
             padding: 1
         }),
@@ -172,6 +171,9 @@ export default class Display {
         this.options.screen.append(this.options.nodes.messages);
         this.options.screen.append(this.options.nodes.channels);
 
+        // Sync State
+        await this.syncState();
+
         if (init) {
             this.init();
         }
@@ -179,9 +181,36 @@ export default class Display {
         return this;
     }
 
+    private async syncState(): Promise<boolean> {
+        if (fs.existsSync(this.options.stateFilePath)) {
+            return new Promise<boolean>((resolve) => {
+                fs.readFile(this.options.stateFilePath, (error: Error, data: Buffer) => {
+                    if (error) {
+                        this.appendSystemMessage(`There was an error while reading the state file: ${error.message}`);
+                        
+                        resolve(false);
+
+                        return;
+                    }
+
+                    this.state = JSON.parse(data.toString());
+                    this.appendSystemMessage(`Synced state @ ${this.options.stateFilePath} (${data.length} bytes)`);
+
+                    resolve(true);
+                });
+            });
+        }
+
+        return false;
+    }
+
     private setupEvents(): this {
         // Screen
         this.options.screen.key("C-c", () => {
+            this.shutdown();
+        });
+
+        this.options.screen.key("C-x", () => {
             process.exit(0);
         });
 
@@ -230,6 +259,10 @@ export default class Display {
         });
 
         this.options.nodes.input.key("C-c", () => {
+            this.shutdown();
+        });
+
+        this.options.nodes.input.key("C-x", () => {
             process.exit(0);
         });
 
@@ -256,6 +289,11 @@ export default class Display {
         this.render();
 
         return this;
+    }
+
+    public shutdown(): void {
+        this.saveStateSync();
+        process.exit(0);
     }
 
     private setupInternalCommands(): this {
@@ -287,15 +325,12 @@ export default class Display {
         });
 
         this.commands.set("save", () => {
-            this.appendSystemMessage("Saving application state ...");
+            this.saveStateSync();
+        });
 
-            fs.writeFileSync(this.options.stateFilePath, JSON.stringify({
-                ...this.state,
-                guild: undefined,
-                channel: undefined
-            }));
-
-            this.appendSystemMessage(`Application state saved @ '${this.options.stateFilePath}'`);
+        this.commands.set("format", (args: string[]) => {
+            this.state.messageFormat = args.join(" ");
+            this.appendSystemMessage(`Successfully changed format to '${this.state.messageFormat}'`);
         });
 
         this.commands.set("global", () => {
@@ -345,6 +380,18 @@ export default class Display {
         return this;
     }
 
+    public saveStateSync(): void {
+        this.appendSystemMessage("Saving application state ...");
+
+        fs.writeFileSync(this.options.stateFilePath, JSON.stringify({
+            ...this.state,
+            guild: undefined,
+            channel: undefined
+        }));
+
+        this.appendSystemMessage(`Application state saved @ '${this.options.stateFilePath}'`);
+    }
+
     public login(token: string): this {
         this.client.login(token).catch((error: Error) => {
             this.appendSystemMessage(`Login failed: ${error.message}`);
@@ -371,7 +418,7 @@ export default class Display {
 
     public setActiveGuild(guild: Guild): this {
         this.state.guild = guild;
-        this.appendSystemMessage(`Switched to guild '${this.state.guild.name}'`);
+        this.appendSystemMessage(`Switched to guild '{bold}${this.state.guild.name}{/bold}'`);
 
         const defaultChannel: TextChannel | null = Utils.findDefaultChannel(this.state.guild);
 
@@ -387,16 +434,17 @@ export default class Display {
 
     public setActiveChannel(channel: TextChannel): this {
         this.state.channel = channel;
-        this.appendSystemMessage(`Switched to channel '${this.state.channel.name}'`);
+        this.appendSystemMessage(`Switched to channel '{bold}${this.state.channel.name}{/bold}'`);
 
         return this;
     }
 
     public appendMessage(sender: string, message: string, color = "white"): this {
-        this.options.nodes.messages.pushLine(this.options.messageFormat
+        this.options.nodes.messages.pushLine(this.state.messageFormat
             .replace("{sender}", ((chalk as any)[color] as any)(sender))
             .replace("{message}", message));
-        
+
+        this.options.nodes.messages.setScrollPerc(100);
         this.render();
 
         return this;
