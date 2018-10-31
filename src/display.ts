@@ -453,6 +453,16 @@ export default class Display {
             this.appendSystemMessage(`Successfully changed format to '${this.state.messageFormat}'`);
         });
 
+        this.commands.set("help", () => {
+            let helpString: string = "";
+
+            for (let [name, handler] of this.commands) {
+                helpString += `\n\t${name}`;
+            }
+
+            this.appendSystemMessage(`Commands available: \n${helpString}\n`);
+        });
+
         this.commands.set("global", () => {
             this.state.globalMessages = !this.state.globalMessages;
 
