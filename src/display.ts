@@ -1,4 +1,4 @@
-import {TextChannel, Guild, Client, Message, Channel, Snowflake} from "discord.js";
+import {TextChannel, Guild, Client, Message, Channel, Snowflake, User, DMChannel} from "discord.js";
 import Utils from "./utils";
 import blessed, {Widgets} from "blessed";
 import chalk from "chalk";
@@ -194,7 +194,12 @@ export default class Display {
             return;
         }
         else if (msg.author.id === this.client.user.id) {
-            this.appendSelfMessage(this.client.user.tag, msg.content);
+            if (msg.channel.type === "text") {
+                this.appendSelfMessage(this.client.user.tag, msg.content);
+            }
+            else if (msg.channel.type === "dm") {
+                this.appendSpecialMessage(`${chalk.green("=>")} DM`, (msg.channel as DMChannel).recipient.tag, msg.content, "blue");
+            }
         }
         else if (this.state.guild && this.state.channel && msg.channel.id === this.state.channel.id) {
             // TODO: Turn this into a function
@@ -204,7 +209,6 @@ export default class Display {
                 if (msg.member.hasPermission("MANAGE_MESSAGES")) {
                     modifiers.push(chalk.red("+"));
                 }
-
 
                 if (msg.author.bot) {
                     modifiers.push(chalk.blue("&"));
@@ -217,7 +221,7 @@ export default class Display {
             this.appendUserMessage(msg.author.tag, msg.content, modifiers);
         }
         else if (msg.channel.type === "dm") {
-            this.appendSpecialMessage("DM", msg.author.tag, msg.content, "blue");
+            this.appendSpecialMessage(`${chalk.green("<=")} DM`, msg.author.tag, msg.content, "blue");
         }
         else if (this.state.globalMessages) {
             this.appendSpecialMessage("Global", msg.author.tag, msg.content);
@@ -241,7 +245,7 @@ export default class Display {
                         guild: this.state.guild,
                         channel: this.state.channel
                     };
-                    
+
                     this.appendSystemMessage(`Synced state @ ${this.options.stateFilePath} (${data.length} bytes)`);
 
                     resolve(true);
@@ -532,6 +536,25 @@ export default class Display {
         this.commands.set("format", (args: string[]) => {
             this.state.messageFormat = args.join(" ");
             this.appendSystemMessage(`Successfully changed format to '${this.state.messageFormat}'`);
+        });
+
+        this.commands.set("dm", async (args: string[]) => {
+            if (!args[0] || !args[1]) {
+                this.appendSystemMessage("Expecting both recipient and message arguments");
+
+                return;
+            }
+
+            if (this.client.users.has(args[0])) {
+                const recipient: User = this.client.users.get(args[0]) as User;
+
+                (await recipient.createDM()).send(args.slice(1).join(" ")).catch((error: Error) => {
+                    this.appendSystemMessage(`Unable to send message: ${error.message}`);
+                });
+            }
+            else {
+                this.appendSystemMessage("Such user does not exist or has not been cached");
+            }
         });
 
         this.commands.set("fullscreen", () => {
