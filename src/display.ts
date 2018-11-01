@@ -35,7 +35,8 @@ export type IAppState = {
     lastMessage?: Message;
     typingTimeout?: NodeJS.Timeout;
     trackList: Snowflake[];
-    wordPins: string[]
+    wordPins: string[];
+    ignoredUsers: Snowflake[];
 }
 
 export type IAppOptions = {
@@ -53,7 +54,8 @@ const defaultAppState: IAppState = {
     muted: false,
     messageFormat: "<{sender}>: {message}",
     trackList: [],
-    wordPins: []
+    wordPins: [],
+    ignoredUsers: []
 };
 
 const defaultAppOptions: IAppOptions = {
@@ -205,7 +207,10 @@ export default class Display {
             this.state.lastMessage = msg;
         }
 
-        if (this.state.trackList.includes(msg.author.id)) {
+        if (this.state.ignoredUsers.includes(msg.author.id)) {
+            return;
+        }
+        else if (this.state.trackList.includes(msg.author.id)) {
             this.appendSpecialMessage("Track", msg.author.tag, msg.content);
         }
         else if (this.state.ignoreBots && msg.author.bot && msg.author.id !== this.client.user.id) {
@@ -556,6 +561,33 @@ export default class Display {
             }
         });
 
+        this.commands.set("ignore", (args: string[]) => {
+            if (!args[0]) {
+                if (this.state.ignoredUsers.length === 0) {
+                    this.appendSystemMessage("Not ignoring anyone");
+
+                    return;
+                }
+
+                const usersString: string = this.state.ignoredUsers.map((userId: Snowflake) => `@{bold}${userId}{/bold}`).join(", ");
+
+                this.appendSystemMessage(`Currently ignoring messages from: ${usersString}`);
+            }
+            else if (this.state.ignoredUsers.includes(args[0])) {
+                this.state.ignoredUsers.splice(this.state.ignoredUsers.indexOf(args[0]), 1);
+                this.appendSystemMessage(`Removed user @{bold}${args[0]}{/bold} from the ignore list`);
+            }
+            else {                
+                if (this.state.trackList.includes(args[0])) {
+                    this.state.trackList.splice(this.state.trackList.indexOf(args[0]), 1);
+                    this.appendSystemMessage(`No longer tracking @{bold}${args[0]}{/bold}`);
+                }
+
+                this.state.ignoredUsers.push(args[0]);
+                this.appendSystemMessage(`Added user @{bold}${args[0]}{/bold} to the ignore list`);
+            }
+        });
+
         this.commands.set("edit", async (args: string[]) => {
             // TODO: Display message
             if (!args[0] || !args[1] || !this.state.channel) {
@@ -657,6 +689,12 @@ export default class Display {
                 this.appendSystemMessage(`No longer tracking @{bold}${args[0]}{/bold}`);
             }
             else if (this.client.users.has(args[0])) {
+                if (this.state.ignoredUsers.includes(args[0])) {
+                    this.appendSystemMessage("You must first stop ignoring that user");
+
+                    return;
+                }
+
                 this.state.trackList.push(args[0]);
                 this.appendSystemMessage(`Now tracking @{bold}${args[0]}{/bold}`);
             }
