@@ -216,6 +216,9 @@ export default class Display {
 
             this.appendUserMessage(msg.author.tag, msg.content, modifiers);
         }
+        else if (msg.channel.type === "dm") {
+            this.appendSpecialMessage("DM", msg.author.tag, msg.content, "blue");
+        }
         else if (this.state.globalMessages) {
             this.appendSpecialMessage("Global", msg.author.tag, msg.content);
         }
