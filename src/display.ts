@@ -200,6 +200,18 @@ export default class Display {
         this.client.on("message", this.handleMessage.bind(this));
         this.client.on("messageUpdate", this.handleMessage.bind(this));
 
+        this.client.on("error", (error: Error) => {
+            this.appendSystemMessage(`An error occurred within the client: ${error.message}`);
+        });
+
+        this.client.on("guildCreate", (guild: Guild) => {
+            this.appendSystemMessage(`Joined guild '{bold}${guild.name}{/bold}' (${guild.memberCount} members)`);
+        });
+
+        this.client.on("guildDelete", (guild: Guild) => {
+            this.appendSystemMessage(`Left guild '{bold}${guild.name}{/bold}' (${guild.memberCount} members)`);
+        });
+
         // Append Nodes
         this.options.screen.append(this.options.nodes.input);
         this.options.screen.append(this.options.nodes.messages);
