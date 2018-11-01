@@ -64,8 +64,8 @@ const defaultAppOptions: IAppOptions = {
     nodes: {
         messages: blessed.box({
             top: "0%",
-            left: "25%",
-            width: "75%+2",
+            left: "0%",
+            width: "100%",
             height: "100%-3",
 
             style: {
@@ -85,6 +85,7 @@ const defaultAppOptions: IAppOptions = {
             width: "25%",
             scrollable: true,
             padding: 1,
+            hidden: true,
 
             style: {
                 item: {
@@ -108,7 +109,7 @@ const defaultAppOptions: IAppOptions = {
                 bg: "lightgray"
             },
 
-            left: "25%",
+            left: "0%",
             bottom: "0",
             width: "100%",
             inputOnFocus: true,
@@ -156,6 +157,8 @@ export default class Display {
             if (firstGuild) {
                 this.setActiveGuild(firstGuild);
             }
+
+            this.showChannels();
         });
 
         this.client.on("message", this.handleMessage.bind(this));
@@ -202,7 +205,7 @@ export default class Display {
                     modifiers.push(chalk.red("+"));
                 }
 
-                
+
                 if (msg.author.bot) {
                     modifiers.push(chalk.blue("&"));
                 }
@@ -239,6 +242,38 @@ export default class Display {
         }
 
         return false;
+    }
+
+    public showChannels(): this {
+        if (this.options.nodes.channels.hidden) {
+            this.options.nodes.messages.width = "75%+2";
+            this.options.nodes.messages.left = "25%";
+            this.options.nodes.input.width = "75%+2";
+            this.options.nodes.input.left = "25%";
+            this.options.nodes.channels.show();
+            this.render();
+        }
+
+        return this;
+    }
+
+    public hideChannels(): this {
+        if (!this.options.nodes.channels.hidden) {
+            this.options.nodes.messages.width = "100%";
+            this.options.nodes.messages.left = "0%";
+            this.options.nodes.input.width = "100%";
+            this.options.nodes.input.left = "0%";
+            this.options.nodes.channels.hide();
+            this.render();
+        }
+
+        return this;
+    }
+
+    public toggleChannels(): this {
+        this.options.nodes.channels.visible ? this.hideChannels() : this.showChannels();
+
+        return this;
     }
 
     private setupEvents(): this {
@@ -290,7 +325,7 @@ export default class Display {
             }
             else {
                 if (this.state.muted) {
-                    this.appendSystemMessage(`Message not sent; Muted mode is active. Please use ${this.options.commandPrefix}mute to toggle`);
+                    this.appendSystemMessage(`Message not sent; Muted mode is active. Please use {bold}${this.options.commandPrefix}mute{/bold} to toggle`);
                 }
                 else if (this.state.guild && this.state.channel) {
                     this.state.channel.send(input).catch((error: Error) => {
