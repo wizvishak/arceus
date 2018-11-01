@@ -18,4 +18,8 @@ export default abstract class Utils {
 
         throw new Error(`[Utils.findDefaultChannel] Guild '${guild.name}' does not contain any text channels`);
     }
+
+    public static getRandomInt(min: number, max: number): number {
+        return Math.floor(Math.random() * (max - min + 1) + min);
+    }
 }

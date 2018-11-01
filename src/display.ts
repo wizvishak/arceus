@@ -7,6 +7,10 @@ import clipboardy from "clipboardy";
 
 const tokenPattern: RegExp = /ND[a-z0-9]{22}\.D[a-z]{2}[a-z0-9-]{3}\.[-a-z0-9_]{27}/gmi;
 
+const tips: string[] = [
+    "You can use the {bold}{prefix}sync{/bold} command to discard unsaved changes and reload saved state"
+];
+
 export type IAppNodes = {
     readonly messages: Widgets.BoxElement;
     readonly channels: Widgets.BoxElement;
@@ -37,6 +41,7 @@ export type IAppState = {
     trackList: Snowflake[];
     wordPins: string[];
     ignoredUsers: Snowflake[];
+    autoHideHeaderTimeout?: NodeJS.Timer;
 }
 
 export type IAppOptions = {
@@ -128,7 +133,7 @@ const defaultAppOptions: IAppOptions = {
                 fg: "black",
                 bg: "white"
             },
-            
+
             top: "0%",
             left: "0%",
             height: "0%+3",
@@ -287,7 +292,7 @@ export default class Display {
             // Messages
             this.options.nodes.messages.width = "75%+2";
             this.options.nodes.messages.left = "25%";
-            
+
             // Input
             this.options.nodes.input.width = "75%+2";
             this.options.nodes.input.left = "25%";
@@ -577,7 +582,7 @@ export default class Display {
                 this.state.ignoredUsers.splice(this.state.ignoredUsers.indexOf(args[0]), 1);
                 this.appendSystemMessage(`Removed user @{bold}${args[0]}{/bold} from the ignore list`);
             }
-            else {                
+            else {
                 if (this.state.trackList.includes(args[0])) {
                     this.state.trackList.splice(this.state.trackList.indexOf(args[0]), 1);
                     this.appendSystemMessage(`No longer tracking @{bold}${args[0]}{/bold}`);
@@ -611,6 +616,14 @@ export default class Display {
         this.commands.set("format", (args: string[]) => {
             this.state.messageFormat = args.join(" ");
             this.appendSystemMessage(`Successfully changed format to '${this.state.messageFormat}'`);
+        });
+
+        this.commands.set("tip", () => {
+            // TODO: Replace all
+            const tip: string = tips[Utils.getRandomInt(0, tips.length - 1)]
+                .replace("{prefix}", this.options.commandPrefix);
+
+            this.showHeader(tip, true);
         });
 
         this.commands.set("dm", async (args: string[]) => {
@@ -750,7 +763,7 @@ export default class Display {
             }
             else {
                 const channel: TextChannel = this.state.guild.channels.array().find((channel) => channel.type === "text" && (channel.name === args[0] || "#" + channel.name === args[0])) as TextChannel;
-                
+
                 if (channel) {
                     this.setActiveChannel(channel as TextChannel);
                 }
@@ -798,7 +811,8 @@ export default class Display {
             guild: undefined,
             channel: undefined,
             lastMessage: undefined,
-            typingTimeout: undefined
+            typingTimeout: undefined,
+            autoHideHeaderTimeout: undefined
         });
 
         fs.writeFileSync(this.options.stateFilePath, data);
@@ -857,21 +871,29 @@ export default class Display {
         return this;
     }
 
-    public showHeader(text: string): boolean {
+    public showHeader(text: string, autoHide: boolean = false): boolean {
         if (!text) {
             throw new Error("[Display.showHeader] Expecting header text");
         }
-        else if (this.options.nodes.header.visible) {
-            return false;
+
+        this.options.nodes.header.content = `[!] ${text}`;
+
+        if (!this.options.nodes.header.visible) {
+            // Messages
+            this.options.nodes.messages.top = "0%+3";
+            this.options.nodes.messages.height = "100%-6";
+
+            // Header
+            this.options.nodes.header.hidden = false;
         }
 
-        // Messages
-        this.options.nodes.messages.top = "0%+3";
-        this.options.nodes.messages.height = "100%-6";
+        if (autoHide) {
+            if (this.state.autoHideHeaderTimeout) {
+                clearTimeout(this.state.autoHideHeaderTimeout);
+            }
 
-        // Header
-        this.options.nodes.header.content = `[!] ${text}`;
-        this.options.nodes.header.hidden = false;
+            this.state.autoHideHeaderTimeout = setTimeout(this.hideHeader.bind(this), text.length * 150);
+        }
 
         this.render();
 
