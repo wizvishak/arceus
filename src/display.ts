@@ -8,6 +8,7 @@ export type IAppNodes = {
     readonly messages: Widgets.BoxElement;
     readonly channels: Widgets.BoxElement;
     readonly input: Widgets.TextboxElement;
+    readonly header: Widgets.BoxElement;
 }
 
 export type IPlugin = {
@@ -115,6 +116,20 @@ const defaultAppOptions: IAppOptions = {
             inputOnFocus: true,
             height: "shrink",
             padding: 1
+        }),
+
+        header: blessed.box({
+            style: {
+                fg: "black",
+                bg: "white"
+            },
+            
+            top: "0%",
+            left: "0%",
+            height: "0%+3",
+            padding: 1,
+            width: "100%",
+            hidden: true
         })
     }
 };
@@ -168,6 +183,7 @@ export default class Display {
         this.options.screen.append(this.options.nodes.input);
         this.options.screen.append(this.options.nodes.messages);
         this.options.screen.append(this.options.nodes.channels);
+        this.options.screen.append(this.options.nodes.header);
 
         // Sync State
         await this.syncState();
@@ -258,10 +274,18 @@ export default class Display {
 
     public showChannels(): this {
         if (this.options.nodes.channels.hidden) {
+            // Messages
             this.options.nodes.messages.width = "75%+2";
             this.options.nodes.messages.left = "25%";
+            
+            // Input
             this.options.nodes.input.width = "75%+2";
             this.options.nodes.input.left = "25%";
+
+            // Header
+            this.options.nodes.header.width = "75%+2";
+            this.options.nodes.header.left = "25%";
+
             this.options.nodes.channels.show();
             this.render();
         }
@@ -271,10 +295,18 @@ export default class Display {
 
     public hideChannels(): this {
         if (!this.options.nodes.channels.hidden) {
+            // Messages
             this.options.nodes.messages.width = "100%";
             this.options.nodes.messages.left = "0%";
+
+            // Input
             this.options.nodes.input.width = "100%";
             this.options.nodes.input.left = "0%";
+
+            // Header
+            this.options.nodes.header.width = "100%";
+            this.options.nodes.header.left = "0%";
+
             this.options.nodes.channels.hide();
             this.render();
         }
@@ -739,7 +771,7 @@ export default class Display {
         }
         else {
             this.options.nodes.input.setValue(`${this.options.commandPrefix}login `);
-            this.appendSystemMessage("Welcome! Please login using {bold}/login <token>{/bold}")
+            this.appendSystemMessage("Welcome! Please login using {bold}/login <token>{/bold} or {bold}/help{/bold} to view available commands");
         }
 
         this.setupEvents()
@@ -765,6 +797,25 @@ export default class Display {
         this.renderChannels();
 
         return this;
+    }
+
+    public showHeader(text: string): void {
+        if (!text) {
+            throw new Error("[Display.showHeader] Expecting header text");
+        }
+        else if (this.options.nodes.header.visible) {
+            return;
+        }
+
+        // Messages
+        this.options.nodes.messages.top = "0%+3";
+        this.options.nodes.messages.height = "100%-6";
+
+        // Header
+        this.options.nodes.header.content = text;
+        this.options.nodes.header.hidden = false;
+
+        this.render();
     }
 
     public setActiveChannel(channel: TextChannel): this {
