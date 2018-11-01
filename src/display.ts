@@ -668,7 +668,14 @@ export default class Display {
                 this.setActiveChannel(this.state.guild.channels.get(args[0]) as TextChannel);
             }
             else {
-                this.appendSystemMessage(`Such channel does not exist in guild '${this.state.guild.name}'`);
+                const channel = this.state.guild.channels.array().find((channel) => channel.type === "text" && (channel.name === args[0] || "#" + channel.name === args[0]));
+                
+                if (channel != null) {
+                    this.setActiveChannel(channel as TextChannel);
+                }
+                else {
+                    this.appendSystemMessage(`Such channel does not exist in guild '${this.state.guild.name}'`);
+                }
             }
         });
 
