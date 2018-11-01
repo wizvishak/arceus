@@ -668,9 +668,9 @@ export default class Display {
                 this.setActiveChannel(this.state.guild.channels.get(args[0]) as TextChannel);
             }
             else {
-                const channel = this.state.guild.channels.array().find((channel) => channel.type === "text" && (channel.name === args[0] || "#" + channel.name === args[0]));
+                const channel: TextChannel = this.state.guild.channels.array().find((channel) => channel.type === "text" && (channel.name === args[0] || "#" + channel.name === args[0])) as TextChannel;
                 
-                if (channel != null) {
+                if (channel) {
                     this.setActiveChannel(channel as TextChannel);
                 }
                 else {
