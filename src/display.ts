@@ -724,6 +724,7 @@ export default class Display {
     }
 
     public setActiveChannel(channel: TextChannel): this {
+        this.stopTyping();
         this.state.channel = channel;
         this.updateTitle();
         this.appendSystemMessage(`Switched to channel '{bold}${this.state.channel.name}{/bold}'`);
