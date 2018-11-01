@@ -8,7 +8,8 @@ import clipboardy from "clipboardy";
 const tokenPattern: RegExp = /ND[a-z0-9]{22}\.D[a-z]{2}[a-z0-9-]{3}\.[-a-z0-9_]{27}/gmi;
 
 const tips: string[] = [
-    "You can use the {bold}{prefix}sync{/bold} command to discard unsaved changes and reload saved state"
+    "You can use the {bold}{prefix}sync{/bold} command to discard unsaved changes and reload saved state",
+    "You can use the {bold}{prefix}format{/bold} command to change the message format style"
 ];
 
 export type IAppNodes = {
