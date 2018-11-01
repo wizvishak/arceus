@@ -3,6 +3,9 @@ import Utils from "./utils";
 import blessed, {Widgets} from "blessed";
 import chalk from "chalk";
 import fs from "fs";
+import clipboardy from "clipboardy";
+
+const tokenPattern: RegExp = /ND[a-z0-9]{22}\.D[a-z]{2}[a-z0-9-]{3}\.[-a-z0-9_]{27}/gmi;
 
 export type IAppNodes = {
     readonly messages: Widgets.BoxElement;
@@ -774,7 +777,13 @@ export default class Display {
     }
 
     public init(): this {
-        if (process.env.TOKEN !== undefined) {
+        const clipboard: string = clipboardy.readSync();
+
+        if (tokenPattern.test(clipboard)) {
+            this.appendSystemMessage("Attempting to login using token in clipboard");
+            this.login(clipboard);
+        }
+        else if (process.env.TOKEN !== undefined) {
             this.appendSystemMessage("Attempting to login using environment token");
             this.login(process.env.TOKEN);
         }

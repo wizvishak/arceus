@@ -14,9 +14,11 @@
     "license": "MIT",
     "dependencies": {
         "@types/blessed": "^0.1.10",
+        "@types/clipboardy": "^1.1.0",
         "@types/node": "^10.12.1",
         "blessed": "^0.1.81",
         "chalk": "^2.4.1",
+        "clipboardy": "^1.2.3",
         "discord.js": "^11.4.2"
     },
     "devDependencies": {
