@@ -793,15 +793,16 @@ export default class Display {
     public saveStateSync(): this {
         this.appendSystemMessage("Saving application state ...");
 
-        fs.writeFileSync(this.options.stateFilePath, JSON.stringify({
+        const data: string = JSON.stringify({
             ...this.state,
             guild: undefined,
             channel: undefined,
             lastMessage: undefined,
             typingTimeout: undefined
-        }));
+        });
 
-        this.appendSystemMessage(`Application state saved @ '${this.options.stateFilePath}'`);
+        fs.writeFileSync(this.options.stateFilePath, data);
+        this.appendSystemMessage(`Application state saved @ '${this.options.stateFilePath}' (${data.length} bytes)`);
 
         return this;
     }
