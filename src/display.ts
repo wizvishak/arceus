@@ -392,7 +392,18 @@ export default class Display {
         });
 
         this.options.nodes.input.key("enter", () => {
-            const input: string = this.getInput(true);
+            let input: string = this.getInput(true);
+
+            const splitInput: string[] = input.split(" ");
+            const tags: string[] = this.getTags();
+
+            for (let i: number = 0; i < tags.length; i++) {
+                while (splitInput.includes(`$${tags[i]}`)) {
+                    splitInput[splitInput.indexOf(`$${tags[i]}`)] = this.getTag(tags[i]);
+                }
+            }
+
+            input = splitInput.join(" ").trim();
 
             if (input === "") {
                 return;
@@ -644,14 +655,28 @@ export default class Display {
 
         this.commands.set("tag", (args: string[]) => {
             if (!args[0]) {
-                // TODO:
+                const tags: string[] = this.getTags();
+
+                if (tags.length === 0) {
+                    this.appendSystemMessage("No tags have been set");
+
+                    return;
+                }
+
+                const tagsString: string = tags.map((tag: string) => `{bold}${tag}{/bold}`).join(", ");
+
+                this.appendSystemMessage(`Tags: ${tagsString}`);
             }
             else if (args.length === 2) {
                 this.setTag(args[0], args[1]);
                 this.appendSystemMessage(`Successfully saved tag '{bold}${args[0]}{/bold}'`);
             }
-            else if (this.hasTag(args[0])) {
-
+            else if (args.length === 1 && this.hasTag(args[0])) {
+                this.deleteTag(args[0]);
+                this.appendSystemMessage(`Successfully deleted tag '{bold}${args[0]}{/bold}'`);
+            }
+            else {
+                this.appendSystemMessage("Such tag does not exist");
             }
         });
 
@@ -862,6 +887,16 @@ export default class Display {
         this.state.tags[name] = value;
 
         return this;
+    }
+
+    public deleteTag(name: string): boolean {
+        if (this.hasTag(name)) {
+            delete this.state.tags[name];
+
+            return true;
+        }
+
+        return false;
     }
 
     public saveStateSync(): this {
