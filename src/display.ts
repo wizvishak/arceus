@@ -9,7 +9,13 @@ const tokenPattern: RegExp = /ND[a-z0-9]{22}\.D[a-z]{2}[a-z0-9-]{3}\.[-a-z0-9_]{
 
 const tips: string[] = [
     "You can use the {bold}{prefix}sync{/bold} command to discard unsaved changes and reload saved state",
-    "You can use the {bold}{prefix}format{/bold} command to change the message format style"
+    "You can use the {bold}{prefix}format{/bold} command to change the message format style",
+    "Toggle full-screen chat using the {bold}{prefix}fullscreen{/bold} command",
+    "Command autocomplete is supported, type {bold}{prefix}he{/bold} then press tab to try it!",
+    "Press {bold}ESC{/bold} anytime to clear the current input",
+    "Press {bold}UP{/bold} to edit your last message",
+    "Exiting with {bold}CTRL + C{/bold} is recommended since it will automatically save state",
+    "Press {bold}CTRL + X{/bold} to force exit without saving state"
 ];
 
 export type IAppNodes = {
@@ -51,6 +57,7 @@ export type IAppOptions = {
     readonly nodes: IAppNodes;
     readonly commandPrefix: string;
     readonly stateFilePath: string;
+    readonly headerAutoHideTimeoutPerChar: number;
 }
 
 const defaultAppState: IAppState = {
@@ -68,6 +75,7 @@ const defaultAppOptions: IAppOptions = {
     maxMessages: 50,
     commandPrefix: "/",
     stateFilePath: "state.json",
+    headerAutoHideTimeoutPerChar: 100,
 
     screen: blessed.screen({
         // TODO:
@@ -893,7 +901,7 @@ export default class Display {
                 clearTimeout(this.state.autoHideHeaderTimeout);
             }
 
-            this.state.autoHideHeaderTimeout = setTimeout(this.hideHeader.bind(this), text.length * 150);
+            this.state.autoHideHeaderTimeout = setTimeout(this.hideHeader.bind(this), text.length * this.options.headerAutoHideTimeoutPerChar);
         }
 
         this.render();
