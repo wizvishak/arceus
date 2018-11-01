@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import Display from "./display";
 
 const app: Display = new Display();
