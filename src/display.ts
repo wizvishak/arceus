@@ -129,7 +129,8 @@ const defaultAppOptions: IAppOptions = {
             height: "0%+3",
             padding: 1,
             width: "100%",
-            hidden: true
+            hidden: true,
+            tags: true
         })
     }
 };
@@ -165,6 +166,7 @@ export default class Display {
     public async setup(init: boolean = true): Promise<this> {
         // Discord Events
         this.client.on("ready", () => {
+            this.hideHeader();
             this.appendSystemMessage(`Successfully connected as {bold}${this.client.user.tag}{/bold}`);
 
             const firstGuild: Guild = this.client.guilds.first();
@@ -778,6 +780,7 @@ export default class Display {
         }
         else {
             this.options.nodes.input.setValue(`${this.options.commandPrefix}login `);
+            this.showHeader("{bold}Pro Tip.{/bold} Set the environment variable {bold}TOKEN{/bold} to automagically login!");
             this.appendSystemMessage("Welcome! Please login using {bold}/login <token>{/bold} or {bold}/help{/bold} to view available commands");
         }
 
@@ -806,12 +809,12 @@ export default class Display {
         return this;
     }
 
-    public showHeader(text: string): void {
+    public showHeader(text: string): boolean {
         if (!text) {
             throw new Error("[Display.showHeader] Expecting header text");
         }
         else if (this.options.nodes.header.visible) {
-            return;
+            return false;
         }
 
         // Messages
@@ -819,10 +822,29 @@ export default class Display {
         this.options.nodes.messages.height = "100%-6";
 
         // Header
-        this.options.nodes.header.content = text;
+        this.options.nodes.header.content = `[!] ${text}`;
         this.options.nodes.header.hidden = false;
 
         this.render();
+
+        return true;
+    }
+
+    public hideHeader(): boolean {
+        if (!this.options.nodes.header.visible) {
+            return false;
+        }
+
+        // Messages
+        this.options.nodes.messages.top = "0%";
+        this.options.nodes.messages.height = "100%-3";
+
+        // Header
+        this.options.nodes.header.hidden = true;
+
+        this.render();
+
+        return true;
     }
 
     public setActiveChannel(channel: TextChannel): this {
