@@ -367,7 +367,7 @@ export default class Display {
     }
 
     public startTyping(): this {
-        if (this.state.guild && this.state.channel && this.state.typingTimeout === undefined) {
+        if (!this.state.muted && this.state.guild && this.state.channel && this.state.typingTimeout === undefined) {
             this.state.channel.startTyping();
 
             this.state.typingTimeout = setTimeout(() => {
@@ -514,6 +514,10 @@ export default class Display {
         this.commands.set("format", (args: string[]) => {
             this.state.messageFormat = args.join(" ");
             this.appendSystemMessage(`Successfully changed format to '${this.state.messageFormat}'`);
+        });
+
+        this.commands.set("fullscreen", () => {
+            this.toggleChannels();
         });
 
         this.commands.set("me", () => {
