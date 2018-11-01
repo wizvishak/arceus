@@ -431,6 +431,12 @@ export default class Display {
         return this;
     }
 
+    public appendInput(value: string): this {
+        this.clearInput(this.getInput() + value);
+
+        return this;
+    }
+
     public async shutdown(code: number = 0): Promise<void> {
         this.stopTyping();
         await this.client.destroy();
