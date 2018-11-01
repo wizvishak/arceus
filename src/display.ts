@@ -10,6 +10,16 @@ export type IAppNodes = {
     readonly input: Widgets.TextboxElement;
 }
 
+export type IPlugin = {
+    readonly name: string;
+    readonly description?: string;
+    readonly version: string;
+    readonly author?: string;
+
+    enabled(display: Display): void;
+    disabled(display: Display): void;
+}
+
 export type IAppState = {
     channel?: TextChannel;
     guild?: Guild;
@@ -176,6 +186,10 @@ export default class Display {
             const modifiers: string[] = [];
 
             if (msg.guild && msg.member) {
+                if (msg.author.bot) {
+                    modifiers.push(chalk.gray("%"));
+                }
+
                 if (msg.member.hasPermission("MANAGE_MESSAGES")) {
                     modifiers.push(chalk.red("+"));
                 }
@@ -500,6 +514,15 @@ export default class Display {
             }
             else {
                 this.appendSystemMessage(`Such channel does not exist in guild '${this.state.guild.name}'`);
+            }
+        });
+
+        this.commands.set("g", (args: string[]) => {
+            if (this.client.guilds.has(args[0])) {
+                this.setActiveGuild(this.client.guilds.get(args[0]) as Guild);
+            }
+            else {
+                this.appendSystemMessage("Such guild does not exist");
             }
         });
 
