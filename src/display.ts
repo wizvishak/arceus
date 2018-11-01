@@ -31,6 +31,7 @@ export type IAppState = {
     lastMessage?: Message;
     typingTimeout?: NodeJS.Timeout;
     trackList: Snowflake[];
+    wordPins: string[]
 }
 
 export type IAppOptions = {
@@ -47,7 +48,8 @@ const defaultAppState: IAppState = {
     ignoreEmptyMessages: true,
     muted: false,
     messageFormat: "<{sender}>: {message}",
-    trackList: []
+    trackList: [],
+    wordPins: []
 };
 
 const defaultAppOptions: IAppOptions = {
@@ -105,7 +107,7 @@ const defaultAppOptions: IAppOptions = {
                 fg: "gray",
                 bg: "lightgray"
             },
-        
+
             left: "25%",
             bottom: "0",
             width: "100%",
@@ -115,6 +117,10 @@ const defaultAppOptions: IAppOptions = {
         })
     }
 };
+
+export enum SpecialSenders {
+    System = "System"
+}
 
 export type ICommandHandler = (args: string[], display: Display) => void;
 
@@ -133,7 +139,7 @@ export default class Display {
 
         this.state = {
             ...defaultAppState,
-            ...state    
+            ...state
         };
 
         this.client = new Client;
@@ -144,7 +150,7 @@ export default class Display {
         // Discord Events
         this.client.on("ready", () => {
             this.appendSystemMessage(`Successfully connected as {bold}${this.client.user.tag}{/bold}`);
-            
+
             const firstGuild: Guild = this.client.guilds.first();
 
             if (firstGuild) {
@@ -192,16 +198,16 @@ export default class Display {
             const modifiers: string[] = [];
 
             if (msg.guild && msg.member) {
-                if (msg.author.bot) {
-                    modifiers.push(chalk.gray("%"));
-                }
-
                 if (msg.member.hasPermission("MANAGE_MESSAGES")) {
                     modifiers.push(chalk.red("+"));
                 }
 
+                
+                if (msg.author.bot) {
+                    modifiers.push(chalk.blue("&"));
+                }
                 if (msg.member.hasPermission("MANAGE_GUILD")) {
-                    modifiers.push(chalk.red("$"));
+                    modifiers.push(chalk.green("$"));
                 }
             }
 
@@ -218,7 +224,7 @@ export default class Display {
                 fs.readFile(this.options.stateFilePath, (error: Error, data: Buffer) => {
                     if (error) {
                         this.appendSystemMessage(`There was an error while reading the state file: ${error.message}`);
-                        
+
                         resolve(false);
 
                         return;
@@ -389,12 +395,12 @@ export default class Display {
 
                         // TODO: Not working
                         bold: this.state.channel !== undefined && this.state.channel.id === channels[i].id,
-    
+
                         hover: {
                             bg: "gray"
                         }
                     },
-                    
+
                     content: `#${channels[i].name}`,
                     width: "100%-2",
                     height: "shrink",
@@ -478,15 +484,52 @@ export default class Display {
         this.commands.set("me", () => {
             // TODO: Add valid method to check if logged in
             if (this.client.user) {
-                this.appendSystemMessage(`Logged in as {bold}${this.client.user.tag}{/bold} | {bold}${this.client.ping}{/bold}ms`);
+                this.appendSystemMessage(`Logged in as {bold}${this.client.user.tag}{/bold} | {bold}${Math.round(this.client.ping)}{/bold}ms`);
             }
             else {
                 this.appendSystemMessage("Not logged in");
             }
         });
 
+        this.commands.set("sync", () => {
+            this.syncState();
+        });
+
+        this.commands.set("pin", (args: string[]) => {
+            if (!args[0]) {
+                if (this.state.wordPins.length === 0) {
+                    this.appendSystemMessage("No set word pins");
+
+                    return;
+                }
+
+                const wordPinsString: string = this.state.wordPins.map((pin: string) => `{bold}${pin}{/bold}`).join(", ");
+
+                this.appendSystemMessage(`Word pins: ${wordPinsString}`);
+            }
+            else if (this.state.wordPins.includes(args[0])) {
+                this.state.wordPins.splice(this.state.wordPins.indexOf(args[0]), 1);
+                this.appendSystemMessage(`Removed word '{bold}${args[0]}{/bold}' from pins`);
+            }
+            else {
+                this.state.wordPins.push(args[0]);
+                this.appendSystemMessage(`Added word '{bold}${args[0]}{/bold}' to pins`);
+            }
+        });
+
         this.commands.set("track", (args: string[]) => {
-            if (this.state.trackList.includes(args[0])) {
+            if (!args[0]) {
+                if (this.state.trackList.length === 0) {
+                    this.appendSystemMessage("Not tracking anyone");
+
+                    return;
+                }
+
+                const usersString: string = this.state.trackList.map((userId: Snowflake) => `@{bold}${userId}{/bold}`).join(", ");
+
+                this.appendSystemMessage(`Tracking users: ${usersString}`);
+            }
+            else if (this.state.trackList.includes(args[0])) {
                 this.state.trackList.splice(this.state.trackList.indexOf(args[0]), 1);
                 this.appendSystemMessage(`No longer tracking @{bold}${args[0]}{/bold}`);
             }
@@ -599,7 +642,7 @@ export default class Display {
         this.client.login(token).catch((error: Error) => {
             this.appendSystemMessage(`Login failed: ${error.message}`);
         });
-        
+
         return this;
     }
 
@@ -612,7 +655,7 @@ export default class Display {
             this.options.nodes.input.setValue(`${this.options.commandPrefix}login `);
             this.appendSystemMessage("Welcome! Please login using {bold}/login <token>{/bold}")
         }
-        
+
         this.setupEvents()
             .setupInternalCommands();
 
@@ -648,10 +691,23 @@ export default class Display {
 
     // TODO: Also include time
     public appendMessage(sender: string, message: string, color = "white"): this {
-        this.options.nodes.messages.pushLine(this.state.messageFormat
+        let line: string = this.state.messageFormat
             .replace("{sender}", ((chalk as any)[color] as any)(sender))
-            .replace("{message}", message));
+            .replace("{message}", message);
 
+        if (sender !== `{bold}${SpecialSenders.System}{/bold}`) {
+            const splitLine: string[] = line.split(" ");
+
+            for (let i: number = 0; i < this.state.wordPins.length; i++) {
+                while (splitLine.includes(this.state.wordPins[i])) {
+                    splitLine[splitLine.indexOf(this.state.wordPins[i])] = chalk.bgGreen.white(this.state.wordPins[i]);
+                }
+            }
+
+            line = splitLine.join(" ");
+        }
+
+        this.options.nodes.messages.pushLine(line);
         this.options.nodes.messages.setScrollPerc(100);
         this.render();
 
@@ -696,7 +752,7 @@ export default class Display {
     }
 
     public appendSystemMessage(message: string): this {
-        this.appendMessage("{bold}System{/bold}", message, "green");
+        this.appendMessage(`{bold}${SpecialSenders.System}{/bold}`, message, "green");
 
         return this;
     }
