@@ -233,7 +233,12 @@ export default class Display {
                         return;
                     }
 
-                    this.state = JSON.parse(data.toString());
+                    this.state = {
+                        ...JSON.parse(data.toString()),
+                        guild: this.state.guild,
+                        channel: this.state.channel
+                    };
+                    
                     this.appendSystemMessage(`Synced state @ ${this.options.stateFilePath} (${data.length} bytes)`);
 
                     resolve(true);
@@ -278,8 +283,8 @@ export default class Display {
 
     private setupEvents(): this {
         // Screen
-        this.options.screen.key("C-c", () => {
-            this.shutdown();
+        this.options.screen.key("C-c", async () => {
+            await this.shutdown();
         });
 
         this.options.screen.key("C-x", () => {
@@ -358,8 +363,14 @@ export default class Display {
             }
         });
 
-        this.options.nodes.input.key("C-c", () => {
-            this.shutdown();
+        this.options.nodes.input.key("down", () => {
+            if (this.client.user.lastMessage && this.client.user.lastMessage.deletable) {
+                this.client.user.lastMessage.delete();
+            }
+        });
+
+        this.options.nodes.input.key("C-c", async () => {
+            await this.shutdown();
         });
 
         this.options.nodes.input.key("C-x", () => {
@@ -413,8 +424,9 @@ export default class Display {
         return this;
     }
 
-    public shutdown(code: number = 0): void {
+    public async shutdown(code: number = 0): Promise<void> {
         this.stopTyping();
+        await this.client.destroy();
         this.saveStateSync();
         process.exit(code);
     }
@@ -467,8 +479,8 @@ export default class Display {
             this.login(args[0]);
         });
 
-        this.commands.set("logout", () => {
-            this.shutdown();
+        this.commands.set("logout", async () => {
+            await this.shutdown();
         });
 
         this.commands.set("now", () => {
