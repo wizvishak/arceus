@@ -311,7 +311,10 @@ export default class Display {
         this.options.nodes.input.key("enter", () => {
             const input: string = this.getInput(true);
 
-            if (input.startsWith(this.options.commandPrefix)) {
+            if (input === "") {
+                return;
+            }
+            else if (input.startsWith(this.options.commandPrefix)) {
                 const args: string[] = input.substr(this.options.commandPrefix.length).split(" ");
                 const base: string = args[0];
 
