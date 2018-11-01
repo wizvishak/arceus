@@ -49,6 +49,7 @@ export type IAppState = {
     wordPins: string[];
     ignoredUsers: Snowflake[];
     autoHideHeaderTimeout?: NodeJS.Timer;
+    tags: any;
 }
 
 export type IAppOptions = {
@@ -68,7 +69,8 @@ const defaultAppState: IAppState = {
     messageFormat: "<{sender}>: {message}",
     trackList: [],
     wordPins: [],
-    ignoredUsers: []
+    ignoredUsers: [],
+    tags: {}
 };
 
 const defaultAppOptions: IAppOptions = {
@@ -78,7 +80,8 @@ const defaultAppOptions: IAppOptions = {
     headerAutoHideTimeoutPerChar: 100,
 
     screen: blessed.screen({
-        // TODO:
+        smartCSR: true,
+        fullUnicode: true
     }),
 
     nodes: {
@@ -639,6 +642,19 @@ export default class Display {
             this.appendSystemMessage(`Successfully changed format to '${this.state.messageFormat}'`);
         });
 
+        this.commands.set("tag", (args: string[]) => {
+            if (!args[0]) {
+                // TODO:
+            }
+            else if (args.length === 2) {
+                this.setTag(args[0], args[1]);
+                this.appendSystemMessage(`Successfully saved tag '{bold}${args[0]}{/bold}'`);
+            }
+            else if (this.hasTag(args[0])) {
+
+            }
+        });
+
         this.commands.set("tip", () => {
             // TODO: Replace all
             const tip: string = tips[Utils.getRandomInt(0, tips.length - 1)]
@@ -820,6 +836,30 @@ export default class Display {
         else {
             this.options.screen.title = "Discord Terminal";
         }
+
+        return this;
+    }
+
+    public getTags(): string[] {
+        return Object.keys(this.state.tags);
+    }
+
+    public hasTag(name: string): boolean {
+        return this.getTags().includes(name);
+    }
+
+    public getTag(name: string): string | null {
+        const keys: string[] = this.getTags();
+
+        if (!keys.includes(name)) {
+            return name;
+        }
+
+        return this.state.tags[name];
+    }
+
+    public setTag(name: string, value: string): this {
+        this.state.tags[name] = value;
 
         return this;
     }
