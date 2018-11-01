@@ -1,4 +1,4 @@
-import {TextChannel, Guild, Client, Message, Channel} from "discord.js";
+import {TextChannel, Guild, Client, Message, Channel, Snowflake} from "discord.js";
 import Utils from "./utils";
 import blessed, {Widgets} from "blessed";
 import chalk from "chalk";
@@ -30,6 +30,7 @@ export type IAppState = {
     messageFormat: string;
     lastMessage?: Message;
     typingTimeout?: NodeJS.Timeout;
+    trackList: Snowflake[];
 }
 
 export type IAppOptions = {
@@ -45,7 +46,8 @@ const defaultAppState: IAppState = {
     ignoreBots: false,
     ignoreEmptyMessages: true,
     muted: false,
-    messageFormat: "<{sender}>: {message}"
+    messageFormat: "<{sender}>: {message}",
+    trackList: []
 };
 
 const defaultAppOptions: IAppOptions = {
@@ -173,7 +175,10 @@ export default class Display {
             this.state.lastMessage = msg;
         }
 
-        if (this.state.ignoreBots && msg.author.bot && msg.author.id !== this.client.user.id) {
+        if (this.state.trackList.includes(msg.author.id)) {
+            this.appendSpecialMessage("Track", msg.author.tag, msg.content);
+        }
+        else if (this.state.ignoreBots && msg.author.bot && msg.author.id !== this.client.user.id) {
             return;
         }
         else if (this.state.ignoreEmptyMessages && !msg.content) {
@@ -183,6 +188,7 @@ export default class Display {
             this.appendSelfMessage(this.client.user.tag, msg.content);
         }
         else if (this.state.guild && this.state.channel && msg.channel.id === this.state.channel.id) {
+            // TODO: Turn this into a function
             const modifiers: string[] = [];
 
             if (msg.guild && msg.member) {
@@ -281,7 +287,9 @@ export default class Display {
                     this.appendSystemMessage(`Message not sent; Muted mode is active. Please use ${this.options.commandPrefix}mute to toggle`);
                 }
                 else if (this.state.guild && this.state.channel) {
-                    this.state.channel.send(input);
+                    this.state.channel.send(input).catch((error: Error) => {
+                        this.appendSystemMessage(`Unable to send message: ${error.message}`);
+                    });
                 }
                 else {
                     this.appendSystemMessage("No active text channel");
@@ -465,6 +473,30 @@ export default class Display {
         this.commands.set("format", (args: string[]) => {
             this.state.messageFormat = args.join(" ");
             this.appendSystemMessage(`Successfully changed format to '${this.state.messageFormat}'`);
+        });
+
+        this.commands.set("me", () => {
+            // TODO: Add valid method to check if logged in
+            if (this.client.user) {
+                this.appendSystemMessage(`Logged in as {bold}${this.client.user.tag}{/bold} | {bold}${this.client.ping}{/bold}ms`);
+            }
+            else {
+                this.appendSystemMessage("Not logged in");
+            }
+        });
+
+        this.commands.set("track", (args: string[]) => {
+            if (this.state.trackList.includes(args[0])) {
+                this.state.trackList.splice(this.state.trackList.indexOf(args[0]), 1);
+                this.appendSystemMessage(`No longer tracking @{bold}${args[0]}{/bold}`);
+            }
+            else if (this.client.users.has(args[0])) {
+                this.state.trackList.push(args[0]);
+                this.appendSystemMessage(`Now tracking @{bold}${args[0]}{/bold}`);
+            }
+            else {
+                this.appendSystemMessage("No such user cached");
+            }
         });
 
         this.commands.set("help", () => {
@@ -657,8 +689,8 @@ export default class Display {
         return this;
     }
 
-    public appendSpecialMessage(prefix: string, sender: string, message: string): this {
-        this.appendMessage(`${prefix} ~> @{bold}${sender}{/bold}`, message, "yellow");
+    public appendSpecialMessage(prefix: string, sender: string, message: string, color: string = "yellow"): this {
+        this.appendMessage(`${prefix} ~> @{bold}${sender}{/bold}`, message, color);
 
         return this;
     }
