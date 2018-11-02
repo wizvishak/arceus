@@ -277,7 +277,7 @@ export default class Display {
             return;
         }
 
-        let content: string = msg.content;
+        let content: string = msg.cleanContent;
 
         if (content.startsWith("$dt_")) {
             try {
