@@ -105,6 +105,8 @@ Pst. Consider **starring** the repository if you like it! <3
 
     Any encrypted messages sent by other users using Discord Terminal will be intercepted and attempted to be decrypted with the currently set decryption key.
 
+    **Note**: Your friend(s) must have set the same password in order for both of you to view your messages!
+
     Keep in mind that your password cannot contain spaces.
 
 Thanks to all these wonderful people for contributing to the project:
