@@ -483,7 +483,7 @@ export default class Display {
         });
 
         this.options.nodes.input.key("down", () => {
-            if (this.client.user.lastMessage && this.client.user.lastMessage.deletable) {
+            if (this.client.user && this.client.user.lastMessage && this.client.user.lastMessage.deletable) {
                 this.client.user.lastMessage.delete();
             }
         });
