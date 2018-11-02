@@ -680,6 +680,9 @@ export default class Display {
 
                 this.appendSystemMessage(`Currently ignoring messages from: ${usersString}`);
             }
+            else if (this.client.user && this.client.user.id === args[0]) {
+                this.appendSystemMessage("You can't ignore yourself, silly");
+            }
             else if (this.state.ignoredUsers.includes(args[0])) {
                 this.state.ignoredUsers.splice(this.state.ignoredUsers.indexOf(args[0]), 1);
                 this.appendSystemMessage(`Removed user @{bold}${args[0]}{/bold} from the ignore list`);
@@ -857,6 +860,9 @@ export default class Display {
                 const usersString: string = this.state.trackList.map((userId: Snowflake) => `@{bold}${userId}{/bold}`).join(", ");
 
                 this.appendSystemMessage(`Tracking users: ${usersString}`);
+            }
+            else if (this.client.user && this.client.user.id === args[0]) {
+                this.appendSystemMessage("You can't track yourself, silly");
             }
             else if (this.state.trackList.includes(args[0])) {
                 this.state.trackList.splice(this.state.trackList.indexOf(args[0]), 1);
