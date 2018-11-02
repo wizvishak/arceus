@@ -12,7 +12,7 @@ Although it's intended to be used with a **bot token** which is 100% compliant w
 
 ### Get Started
 
-Setting up is extremely easy. Clone the repository and issue the following commands:
+Setting up is extremely easy. Just issue the following commands:
 
 `$ npm install --global discord-term`
 
