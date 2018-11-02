@@ -1,6 +1,6 @@
 {
     "name": "discord-term",
-    "version": "1.2.0",
+    "version": "1.2.1",
     "description": "Extensible Discord terminal client",
     "main": "dist/app.js",
     "scripts": {
@@ -26,7 +26,8 @@
         "typescript": "^3.1.4"
     },
     "files": [
-        "dist"
+        "dist",
+        "themes"
     ],
     "bin": {
         "dterm": "dist/app.js"
