@@ -1,0 +1,23 @@
+{
+    "messages": {
+        "foregroundColor": "#fff",
+        "backgroundColor": "#000"
+    },
+
+    "channels": {
+        "foregroundColor": "white",
+        "backgroundColor": "#000",
+        "foregroundColorHover": "#fff",
+        "backgroundColorHover": "#333"
+    },
+
+    "input": {
+        "foregroundColor": "#fff",
+        "backgroundColor": "#301e20"
+    },
+
+    "header": {
+        "foregroundColor": "white",
+        "backgroundColor": "gray"
+    }
+}

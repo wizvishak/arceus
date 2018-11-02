@@ -4,6 +4,7 @@ import blessed, {Widgets} from "blessed";
 import chalk from "chalk";
 import fs from "fs";
 import clipboardy from "clipboardy";
+import path from "path";
 
 const tokenPattern: RegExp = /ND[a-z0-9]{22}\.D[a-z]{2}[a-z0-9-]{3}\.[-a-z0-9_]{27}/gmi;
 
@@ -50,6 +51,8 @@ export type IAppState = {
     ignoredUsers: Snowflake[];
     autoHideHeaderTimeout?: NodeJS.Timer;
     tags: any;
+    theme: string;
+    themeData: any;
 }
 
 export type IAppOptions = {
@@ -66,11 +69,44 @@ const defaultAppState: IAppState = {
     ignoreBots: false,
     ignoreEmptyMessages: true,
     muted: false,
-    messageFormat: "<{sender}>: {message}",
+    messageFormat: "<{sender}> {message}",
     trackList: [],
     wordPins: [],
     ignoredUsers: [],
-    tags: {}
+    tags: {},
+    theme: "default",
+
+    themeData: {
+        messages: {
+            foregroundColor: "white",
+            backgroundColor: "gray"
+        },
+
+        channels: {
+            foregroundColor: "white",
+            backgroundColor: "black"
+        },
+
+        "channels-item": {
+            foregroundColor: "white",
+            backgroundColor: "gray"
+        },
+
+        "channels-item-selected": {
+            foregroundColor: "white",
+            backgroundColor: "gray"
+        },
+
+        input: {
+            foregroundColor: "gray",
+            backgroundColor: "lightgray"
+        },
+
+        header: {
+            foregroundColor: "black",
+            backgroundColor: "white"
+        }
+    }
 };
 
 const defaultAppOptions: IAppOptions = {
@@ -92,8 +128,8 @@ const defaultAppOptions: IAppOptions = {
             height: "100%-3",
 
             style: {
-                fg: "white",
-                bg: "gray"
+                fg: defaultAppState.themeData.messages.foregroundColor,
+                bg: defaultAppState.themeData.messages.backgroundColor
             },
 
             scrollable: true,
@@ -111,25 +147,15 @@ const defaultAppOptions: IAppOptions = {
             hidden: true,
 
             style: {
-                item: {
-                    bg: "gray",
-                    fg: "white"
-                },
-
-                selected: {
-                    bg: "gray",
-                    fg: "white"
-                },
-
-                fg: "white",
-                bg: "black"
+                fg: defaultAppState.themeData.channels.foregroundColor,
+                bg: defaultAppState.themeData.channels.backgroundColor
             } as any
         }),
 
         input: blessed.textbox({
             style: {
-                fg: "gray",
-                bg: "lightgray"
+                fg: defaultAppState.themeData.input.foregroundColor,
+                bg: defaultAppState.themeData.input.backgroundColor
             },
 
             left: "0%",
@@ -142,8 +168,8 @@ const defaultAppOptions: IAppOptions = {
 
         header: blessed.box({
             style: {
-                fg: "black",
-                bg: "white"
+                fg: defaultAppState.themeData.header.foregroundColor,
+                bg: defaultAppState.themeData.header.backgroundColor
             },
 
             top: "0%",
@@ -224,6 +250,9 @@ export default class Display {
         // Sync State
         await this.syncState();
 
+        // Load & apply saved theme
+        this.loadTheme(this.state.theme);
+
         if (init) {
             this.init();
         }
@@ -298,7 +327,8 @@ export default class Display {
                     this.state = {
                         ...JSON.parse(data.toString()),
                         guild: this.state.guild,
-                        channel: this.state.channel
+                        channel: this.state.channel,
+                        themeData: this.state.themeData
                     };
 
                     this.appendSystemMessage(`Synced state @ ${this.options.stateFilePath} (${data.length} bytes)`);
@@ -526,44 +556,64 @@ export default class Display {
         process.exit(code);
     }
 
-    public renderChannels(): this {
-        if (this.state.guild) {
-            this.options.nodes.channels.children = [];
+    public updateChannels(render: boolean = false): this {
+        if (!this.state.guild) {
+            return this;
+        }
 
-            const channels: TextChannel[] = this.state.guild.channels.array().filter((channel: Channel) => channel.type === "text") as TextChannel[];
+        // Fixes "ghost" children bug
+        for (let i: number = 0; i < this.options.nodes.channels.children.length; i++) {
+            this.options.nodes.channels.remove(this.options.nodes.channels.children[i]);
+        }
 
-            for (let i: number = 0; i < channels.length; i++) {
-                const channelNode: Widgets.BoxElement = blessed.box({
-                    style: {
-                        bg: "black",
-                        fg: "white",
+        const channels: TextChannel[] = this.state.guild.channels.array().filter((channel: Channel) => channel.type === "text") as TextChannel[];
 
-                        // TODO: Not working
-                        bold: this.state.channel !== undefined && this.state.channel.id === channels[i].id,
+        for (let i: number = 0; i < channels.length; i++) {
+            let channelName: string = channels[i].name;
 
-                        hover: {
-                            bg: "gray"
-                        }
-                    },
-
-                    content: `#${channels[i].name}`,
-                    width: "100%-2",
-                    height: "shrink",
-                    top: i,
-                    left: "0%",
-                    clickable: true
-                });
-
-                channelNode.on("click", () => {
-                    if (this.state.guild && this.state.channel && channels[i].id !== this.state.channel.id && this.state.guild.channels.has(channels[i].id)) {
-                        this.setActiveChannel(channels[i]);
-                    }
-                });
-
-                this.options.nodes.channels.append(channelNode);
+            // TODO: Use a constant for the pattern
+            // This fixes UI being messed up due to channel names containing unicode emojis
+            while (/[^a-z0-9-_?]+/gm.test(channelName)) {
+                channelName = channelName.replace(/[^a-z0-9-_]+/gm, "?");
             }
 
-            this.render();
+            if (channelName.length > 25) {
+                channelName = channelName.substring(0, 21) + " ...";
+            }
+
+            const channelNode: Widgets.BoxElement = blessed.box({
+                style: {
+                    bg: this.state.themeData.channels.backgroundColor,
+                    fg: this.state.themeData.channels.foregroundColor,
+
+                    // TODO: Not working
+                    bold: this.state.channel !== undefined && this.state.channel.id === channels[i].id,
+
+                    hover: {
+                        bg: this.state.themeData.channels.backgroundColorHover,
+                        fg: this.state.themeData.channels.foregroundColorHover
+                    }
+                },
+
+                content: `#${channelName}`,
+                width: "100%-2",
+                height: "shrink",
+                top: i,
+                left: "0%",
+                clickable: true
+            });
+
+            channelNode.on("click", () => {
+                if (this.state.guild && this.state.channel && channels[i].id !== this.state.channel.id && this.state.guild.channels.has(channels[i].id)) {
+                    this.setActiveChannel(channels[i]);
+                }
+            });
+
+            this.options.nodes.channels.append(channelNode);
+        }
+
+        if (render) {
+            this.render(false, false);
         }
 
         return this;
@@ -651,6 +701,16 @@ export default class Display {
         this.commands.set("format", (args: string[]) => {
             this.state.messageFormat = args.join(" ");
             this.appendSystemMessage(`Successfully changed format to '${this.state.messageFormat}'`);
+        });
+
+        this.commands.set("theme", (args: string[]) => {
+            if (!args[0]) {
+                this.appendSystemMessage(`The current theme is '{bold}${this.state.theme}{/bold}'`)
+
+                return;
+            }
+
+            this.loadTheme(args[0]);
         });
 
         this.commands.set("tag", (args: string[]) => {
@@ -851,6 +911,69 @@ export default class Display {
         return this;
     }
 
+    public loadTheme(name: string): this {
+        if (!name) {
+            return;
+        }
+        // TODO: Trivial expression
+        /*else if (this.state.theme === name) {
+            return this;
+        }*/
+
+        // TODO: Allow to change themes folder path (by option)
+        const themePath: string = path.join("themes", `${name}.json`);
+
+        if (name === defaultAppState.theme) {
+            this.setTheme(defaultAppState.theme, defaultAppState.themeData, 0);
+        }
+        else if (fs.existsSync(themePath)) {
+            this.appendSystemMessage(`Loading theme '{bold}${name}{/bold}' ...`);
+
+            // TODO: Verify schema
+            const theme: any = fs.readFileSync(themePath).toString();
+
+            // TODO: Catch possible parsing errors
+            this.setTheme(name, JSON.parse(theme), theme.length);
+        }
+        else {
+            this.appendSystemMessage("Such theme file could not be found (Are you sure thats under the {bold}/themes{/bold} folder?)");
+        }
+
+        return this;
+    }
+
+    public setTheme(name: string, data: any, length: number): this {
+        if (!data) {
+            this.appendSystemMessage("Error while setting theme: No data was provided for the theme");
+
+            return this;
+        }
+
+        this.state.theme = name;
+        this.state.themeData = data;
+
+        // Messages
+        this.options.nodes.messages.style.fg = this.state.themeData.messages.foregroundColor;
+        this.options.nodes.messages.style.bg = this.state.themeData.messages.backgroundColor;
+
+        // Input
+        this.options.nodes.input.style.fg = this.state.themeData.input.foregroundColor;
+        this.options.nodes.input.style.bg = this.state.themeData.input.backgroundColor;
+
+        // Channels
+        this.options.nodes.channels.style.fg = this.state.themeData.channels.foregroundColor;
+        this.options.nodes.channels.style.bg = this.state.themeData.channels.backgroundColor;
+
+        // Header
+        this.options.nodes.header.style.fg = this.state.themeData.header.foregroundColor;
+        this.options.nodes.header.style.bg = this.state.themeData.header.backgroundColor;
+
+        this.updateChannels();
+        this.appendSystemMessage(`Applied theme '${name}' (${length} bytes)`);
+
+        return this;
+    }
+
     private updateTitle(): this {
         if (this.state.guild && this.state.channel) {
             this.options.screen.title = `Discord Terminal @ ${this.state.guild.name} # ${this.state.channel.name}`;
@@ -908,7 +1031,8 @@ export default class Display {
             channel: undefined,
             lastMessage: undefined,
             typingTimeout: undefined,
-            autoHideHeaderTimeout: undefined
+            autoHideHeaderTimeout: undefined,
+            themeData: undefined
         });
 
         fs.writeFileSync(this.options.stateFilePath, data);
@@ -962,7 +1086,7 @@ export default class Display {
         }
 
         this.updateTitle();
-        this.renderChannels();
+        this.updateChannels(true);
 
         return this;
     }
@@ -1023,10 +1147,25 @@ export default class Display {
     }
 
     // TODO: Also include time
-    public appendMessage(sender: string, message: string, color = "white"): this {
+    public appendMessage(sender: string, message: string, senderColor: string = "white", messageColor: string = this.state.themeData.messages.foregroundColor): this {
+        let messageString: string = message;
+
+        if (messageColor.startsWith("#")) {
+            messageString = chalk.hex(messageColor)(messageString);
+        }
+        else if (chalk[messageColor] === undefined || typeof chalk[messageColor] !== "function") {
+            this.appendSystemMessage("Refusing to append message: An invalid color was provided");
+
+            return this;
+        }
+        else {
+            messageString = ((chalk as any)[messageColor] as any)(message);
+        }
+
         let line: string = this.state.messageFormat
-            .replace("{sender}", ((chalk as any)[color] as any)(sender))
-            .replace("{message}", message);
+            // TODO: Catch error if sender color doesn't exist
+            .replace("{sender}", chalk[senderColor](sender))
+            .replace("{message}", messageString);
 
         if (sender !== `{bold}${SpecialSenders.System}{/bold}`) {
             const splitLine: string[] = line.split(" ");
@@ -1047,7 +1186,11 @@ export default class Display {
         return this;
     }
 
-    public render(hard: boolean = false): this {
+    public render(hard: boolean = false, updateChannels: boolean = false): this {
+        if (updateChannels) {
+            this.updateChannels(false);
+        }
+
         if (!hard) {
             this.options.screen.render();
         }
