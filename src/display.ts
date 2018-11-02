@@ -5,6 +5,7 @@ import chalk from "chalk";
 import fs from "fs";
 import clipboardy from "clipboardy";
 import path from "path";
+import Encryption from "./encryption";
 
 const tokenPattern: RegExp = /ND[a-z0-9]{22}\.D[a-z]{2}[a-z0-9-]{3}\.[-a-z0-9_]{27}/gmi;
 
@@ -53,6 +54,8 @@ export type IAppState = {
     tags: any;
     theme: string;
     themeData: any;
+    decriptionKey: string;
+    encrypt: boolean;
 }
 
 export type IAppOptions = {
@@ -75,6 +78,8 @@ const defaultAppState: IAppState = {
     ignoredUsers: [],
     tags: {},
     theme: "default",
+    decriptionKey: "discord-term",
+    encrypt: false,
 
     themeData: {
         messages: {
@@ -84,17 +89,9 @@ const defaultAppState: IAppState = {
 
         channels: {
             foregroundColor: "white",
-            backgroundColor: "black"
-        },
-
-        "channels-item": {
-            foregroundColor: "white",
-            backgroundColor: "gray"
-        },
-
-        "channels-item-selected": {
-            foregroundColor: "white",
-            backgroundColor: "gray"
+            backgroundColor: "black",
+            foregroundColorHover: "white",
+            backgroundColorHover: "gray"
         },
 
         input: {
@@ -270,6 +267,8 @@ export default class Display {
         }
         else if (this.state.trackList.includes(msg.author.id)) {
             this.appendSpecialMessage("Track", msg.author.tag, msg.content);
+
+            return;
         }
         else if (this.state.ignoreBots && msg.author.bot && msg.author.id !== this.client.user.id) {
             return;
@@ -277,12 +276,24 @@ export default class Display {
         else if (this.state.ignoreEmptyMessages && !msg.content) {
             return;
         }
-        else if (msg.author.id === this.client.user.id) {
+
+        let content: string = msg.content;
+
+        if (content.startsWith("$dt_")) {
+            try {
+                content = Encryption.decrypt(content.substr(4), this.state.decriptionKey);
+            }
+            catch (error) {
+                this.appendSystemMessage(`Could not decrypt message: ${error.message}`);
+            }
+        }
+
+        if (msg.author.id === this.client.user.id) {
             if (msg.channel.type === "text") {
-                this.appendSelfMessage(this.client.user.tag, msg.content);
+                this.appendSelfMessage(this.client.user.tag, content);
             }
             else if (msg.channel.type === "dm") {
-                this.appendSpecialMessage(`${chalk.green("=>")} DM`, (msg.channel as DMChannel).recipient.tag, msg.content, "blue");
+                this.appendSpecialMessage(`${chalk.green("=>")} DM`, (msg.channel as DMChannel).recipient.tag, content, "blue");
             }
         }
         else if (this.state.guild && this.state.channel && msg.channel.id === this.state.channel.id) {
@@ -302,13 +313,13 @@ export default class Display {
                 }
             }
 
-            this.appendUserMessage(msg.author.tag, msg.content, modifiers);
+            this.appendUserMessage(msg.author.tag, content, modifiers);
         }
         else if (msg.channel.type === "dm") {
-            this.appendSpecialMessage(`${chalk.green("<=")} DM`, msg.author.tag, msg.content, "blue");
+            this.appendSpecialMessage(`${chalk.green("<=")} DM`, msg.author.tag, content, "blue");
         }
         else if (this.state.globalMessages) {
-            this.appendSpecialMessage("Global", msg.author.tag, msg.content);
+            this.appendSpecialMessage("Global", msg.author.tag, content);
         }
     }
 
@@ -455,7 +466,13 @@ export default class Display {
                     this.appendSystemMessage(`Message not sent; Muted mode is active. Please use {bold}${this.options.commandPrefix}mute{/bold} to toggle`);
                 }
                 else if (this.state.guild && this.state.channel) {
-                    this.state.channel.send(input).catch((error: Error) => {
+                    let msg: string = input;
+
+                    if (this.state.encrypt) {
+                        msg = "$dt_" + Encryption.encrypt(msg, this.state.decriptionKey);
+                    }
+
+                    this.state.channel.send(msg).catch((error: Error) => {
                         this.appendSystemMessage(`Unable to send message: ${error.message}`);
                     });
                 }
@@ -701,6 +718,28 @@ export default class Display {
         this.commands.set("format", (args: string[]) => {
             this.state.messageFormat = args.join(" ");
             this.appendSystemMessage(`Successfully changed format to '${this.state.messageFormat}'`);
+        });
+
+        this.commands.set("encrypt", (args: string[]) => {
+            if (!args[0]) {
+                this.appendSystemMessage("You must provide a password");
+
+                return;
+            }
+
+            this.state.decriptionKey = args[0];
+            this.appendSystemMessage(`Using decryption key '{bold}${args[0]}{/bold}'`);
+        });
+
+        this.commands.set("doencrypt", () => {
+            this.state.encrypt = !this.state.encrypt;
+
+            if (this.state.encrypt) {
+                this.appendSystemMessage("Now encrypting messages");
+            }
+            else {
+                this.appendSystemMessage("No longer encrypting messages");
+            }
         });
 
         this.commands.set("theme", (args: string[]) => {
