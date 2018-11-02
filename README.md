@@ -66,3 +66,12 @@ Pst. Consider **starring** the repository if you like it! <3
         $ /format [{sender}] => {message}
 
     Try it out and match your style. Shiny!
+
+3. **Pasting in the terminal** You can use **CTRL + SHIFT + V** to paste data in most terminals.
+
+4. **Neat details** There's some cool magic behind the scenes that you might not know about:
+    1. Just have your token in your clipboard before starting the application, it will automagically detect it and login.
+    2. Alternatively, you can set the **TOKEN** environment variable and it will use it to automatically login.
+    3. If you ever need to force a re-render because the UI might be buggy or so, use the **/reset** command.
+    4. Pressing the **UP** arrow key after sending a message will allow you to edit it (similar functionality to Discord).
+    5. Pressing the **DOWN** arrow key will delete your last message (if there was any).
