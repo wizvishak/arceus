@@ -34,7 +34,7 @@ Pst. Consider **starring** the repository if you like it! <3
         For a channel:
 
         $ /tag dev 437051394592210944
-        $ /c $general
+        $ /c $dev
 
         Or for a guild:
 
