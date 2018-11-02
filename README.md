@@ -54,8 +54,8 @@ Pst. Consider **starring** the repository if you like it! <3
 
     In Linux, you can also just click the channels ;)
 
-2. **Change yo style!**
-    Customizability is what this project is heading for. I'm planning on adding support for themes and plugins in the future! As of now, you can edit your message format.
+2. **Change message format style**
+    Customizability is what this project is heading for. I'm planning on adding support for plugins in the future! As of now, you can edit your message format and theme.
 
     Example:
 
@@ -67,11 +67,37 @@ Pst. Consider **starring** the repository if you like it! <3
 
     Try it out and match your style. Shiny!
 
-3. **Pasting in the terminal** You can use **CTRL + SHIFT + V** to paste data in most terminals.
+3. **Change themes**
+    Changing themes is easy. You can switch between themes using the **/themes** command.
 
-4. **Neat details** There's some cool magic behind the scenes that you might not know about:
+    Example:
+
+        $ /theme dark-red
+    
+    Themes included:
+
+    * default
+    * dark
+    * dark-red
+    * rose
+    * ruby
+    * discord
+
+    Want more? Make your own! Checkout how those themes were made under the **themes** directory (Psst. It's easy!).
+
+    Don't forget to create a pull request submitting your awesome theme so everyone can use it!
+
+4. **Pasting in the terminal** You can use **CTRL + SHIFT + V** to paste data in most terminals.
+
+5. **Neat details** There's some cool magic behind the scenes that you might not know about:
     1. Just have your token in your clipboard before starting the application, it will automagically detect it and login.
     2. Alternatively, you can set the **TOKEN** environment variable and it will use it to automatically login.
     3. If you ever need to force a re-render because the UI might be buggy or so, use the **/reset** command.
     4. Pressing the **UP** arrow key after sending a message will allow you to edit it (similar functionality to Discord).
     5. Pressing the **DOWN** arrow key will delete your last message (if there was any).
+
+Thanks to all these wonderful people for contributing to the project:
+
+* [@AL1L](https://github.com/AL1L)
+* [@anirudhbs](https://github.com/anirudhbs)
+* [@danielgulic](https://github.com/danielgulic)
