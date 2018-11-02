@@ -56,6 +56,7 @@ export type IAppState = {
     themeData: any;
     decriptionKey: string;
     encrypt: boolean;
+    token?: string;
 }
 
 export type IAppOptions = {
@@ -212,6 +213,7 @@ export default class Display {
         // Discord Events
         this.client.on("ready", () => {
             this.hideHeader();
+            this.state.token = this.client.token;
             this.appendSystemMessage(`Successfully connected as {bold}${this.client.user.tag}{/bold}`);
 
             const firstGuild: Guild = this.client.guilds.first();
@@ -221,6 +223,7 @@ export default class Display {
             }
 
             this.showChannels();
+            this.saveStateSync();
         });
 
         this.client.on("message", this.handleMessage.bind(this));
@@ -723,6 +726,13 @@ export default class Display {
             this.appendSystemMessage(`Successfully changed format to '${this.state.messageFormat}'`);
         });
 
+        this.commands.set("forget", () => {
+            if (this.state.token) {
+                this.state.token = undefined;
+                this.saveStateSync();
+            }
+        });
+
         this.commands.set("encrypt", (args: string[]) => {
             if (!args[0]) {
                 this.appendSystemMessage("You must provide a password");
@@ -1099,7 +1109,11 @@ export default class Display {
     public init(): this {
         const clipboard: string = clipboardy.readSync();
 
-        if (tokenPattern.test(clipboard)) {
+        if (this.state.token) {
+            this.appendSystemMessage(`Attempting to login using saved token; Use {bold}${this.options.commandPrefix}forget{/bold} to forget the token`);
+            this.login(this.state.token);
+        }
+        else if (tokenPattern.test(clipboard)) {
             this.appendSystemMessage("Attempting to login using token in clipboard");
             this.login(clipboard);
         }
