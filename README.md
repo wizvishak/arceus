@@ -1,4 +1,4 @@
-### Discord Terminal
+### ✨ Discord Terminal
 
 An extensible Discord terminal client. Can be used with bot or user tokens.
 
