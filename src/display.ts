@@ -921,7 +921,9 @@ export default class Display {
         }*/
 
         // TODO: Allow to change themes folder path (by option)
-        const themePath: string = path.join("themes", `${name}.json`);
+        const themePath: string = path.join(__dirname, "../", "themes", `${name}.json`);
+
+        this.appendSystemMessage(__dirname);
 
         if (name === defaultAppState.theme) {
             this.setTheme(defaultAppState.theme, defaultAppState.themeData, 0);
@@ -936,7 +938,7 @@ export default class Display {
             this.setTheme(name, JSON.parse(theme), theme.length);
         }
         else {
-            this.appendSystemMessage("Such theme file could not be found (Are you sure thats under the {bold}/themes{/bold} folder?)");
+            this.appendSystemMessage("Such theme file could not be found (Are you sure thats under the {bold}themes{/bold} folder?)");
         }
 
         return this;
