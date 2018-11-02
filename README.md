@@ -22,4 +22,6 @@ That's it! Although keep in mind that since the project is relatively new, you m
 
 **This project has been tested and verified as working on native Ubuntu terminal and Windows command prompt + PowerShell using Node.js 10**
 
+Unfortunately, the background colors don't seem to work on Windows command prompt since it doesn't support it. I'm trying to resolve that issue tho.
+
 Pst. Consider **starring** the repository if you like it! <3
