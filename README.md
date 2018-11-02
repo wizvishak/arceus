@@ -4,7 +4,7 @@ An extensible Discord terminal client. Can be used with bot or user tokens.
 
 **Disclaimer**: Self-bots are against ToS and therefore discouraged. I am not responsible for any loss or restriction whatsoever caused by using self-bots or this software.
 
-Although it's intended to be used with a **bot token** which is 100% complient with Discord's ToS.
+Although it's intended to be used with a **bot token** which is 100% compliant with Discord's ToS.
 
 ### Screenshots
 
@@ -55,7 +55,7 @@ Pst. Consider **starring** the repository if you like it! <3
     In Linux, you can also just click the channels ;)
 
 2. **Change yo style!**
-    Customizability is what this project is heading for. I'm planning on adding support for  themes and plugins in the future! As of now, you can edit your message format.
+    Customizability is what this project is heading for. I'm planning on adding support for themes and plugins in the future! As of now, you can edit your message format.
 
     Example:
 
