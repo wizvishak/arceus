@@ -765,6 +765,25 @@ export default class Display {
             this.loadTheme(args[0]);
         });
 
+        this.commands.set("themes", () => {
+            const themesPath: string = path.join(__dirname, "../", "themes");
+
+            if (fs.existsSync(themesPath)) {
+                let files: string[] = fs.readdirSync(themesPath);
+
+                for (let i: number = 0; i < files.length; i++) {
+                    files[i] = files[i].replace(".json", "");
+                }
+
+                const themesString: string = files.join("\n");
+
+                this.appendSystemMessage(themesString);
+            }
+            else {
+                this.appendSystemMessage("Themes directory does not exist");
+            }
+        });
+
         this.commands.set("tag", (args: string[]) => {
             if (!args[0]) {
                 const tags: string[] = this.getTags();
@@ -977,8 +996,6 @@ export default class Display {
 
         // TODO: Allow to change themes folder path (by option)
         const themePath: string = path.join(__dirname, "../", "themes", `${name}.json`);
-
-        this.appendSystemMessage(__dirname);
 
         if (name === defaultAppState.theme) {
             this.setTheme(defaultAppState.theme, defaultAppState.themeData, 0);

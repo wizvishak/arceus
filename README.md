@@ -96,6 +96,17 @@ Pst. Consider **starring** the repository if you like it! <3
     4. Pressing the **UP** arrow key after sending a message will allow you to edit it (similar functionality to Discord).
     5. Pressing the **DOWN** arrow key will delete your last message (if there was any).
 
+6. **Super-secret mode** Discord Terminal has this cool security feature that allows you to send + receive encrypted and all you need to do is set a password.
+
+    1. **/encrypt secret_password_here_no_spaces** This will set your decryption/encryption password
+    2. **/doencrypt** Toggle automatic encryption of messages
+
+    From now on, your messages will be sent encrypted, preventing anyone (including Discord) from deciphering them **unless** they have set the same password as you. This way, you can give your friends the secret password and both talk in an encrypted, safe manner.
+
+    Any encrypted messages sent by other users using Discord Terminal will be intercepted and attempted to be decrypted with the currently set decryption key.
+
+    Keep in mind that your password cannot contain spaces.
+
 Thanks to all these wonderful people for contributing to the project:
 
 * [@AL1L](https://github.com/AL1L)
