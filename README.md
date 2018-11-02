@@ -4,6 +4,8 @@ Am extensible Discord terminal client. Can be used with bot or user tokens.
 
 **Disclaimer**: Self-bots are against ToS and therefore discouraged. I am not responsible for any loss or restriction whatsoever caused by using self-bots or this software.
 
+Although it's intended to be used with a bot token which is 100% complient with Discord's ToS.
+
 ### Screenshots
 
 ![Discord Terminal](https://i.imgur.com/CBbhXTP.gif)
