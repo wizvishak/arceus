@@ -16,6 +16,8 @@ Setting up is extremely easy. Clone the repository and issue the following comma
 
 `$ dterm`
 
-That's it!
+That's it! Although keep in mind that since the project is relatively new, you might encounter some bugs here and there.
 
-Pst. Consider starring the repository if you like it! <3
+**This project has been tested and verified as working on native Ubuntu terminal and Windows command prompt + PowerShell using Node.js 10**
+
+Pst. Consider **starring** the repository if you like it! <3
