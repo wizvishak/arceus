@@ -9,7 +9,10 @@
         "prepublish": "npm run build"
     },
     "keywords": [
-        "discord"
+        "discord",
+        "discord-terminal",
+        "discord-client",
+        "discordjs"
     ],
     "author": "CloudRex <cloudrex@outlook.com>",
     "license": "MIT",
