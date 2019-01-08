@@ -6,6 +6,8 @@ An extensible Discord terminal client. Can be used with bot or user tokens.
 
 Although it's intended to be used with a **bot token** which is 100% compliant with Discord's ToS.
 
+[If you wish to contact me or for support click here](https://discord.gg/kmFDMwT)
+
 ### Screenshots
 
 ![Discord Terminal](https://i.imgur.com/CBbhXTP.gif)
