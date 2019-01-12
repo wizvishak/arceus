@@ -115,4 +115,4 @@ Thanks to all these wonderful people for contributing to the project:
 
 * [@AL1L](https://github.com/AL1L)
 * [@anirudhbs](https://github.com/anirudhbs)
-* [@danielgulic](https://github.com/danielgulic)
+* [@jellz](https://github.com/jellz)
