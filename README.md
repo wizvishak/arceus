@@ -84,6 +84,7 @@ Pst. Consider **starring** the repository if you like it! <3
     * rose
     * ruby
     * discord
+    * purple-glory (by [@JustCaptcha](https://github.com/JustCaptcha))
 
     Want more? Make your own! Checkout how those themes were made under the **themes** directory (Psst. It's easy!).
 
