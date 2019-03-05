@@ -16,9 +16,10 @@ Although it's intended to be used with a **bot token** which is 100% compliant w
 
 Setting up is extremely easy. Just issue the following commands:
 
-`$ npm install --global discord-term`
-
-`$ dterm`
+```bash
+$ npm install --global discord-term
+$ dterm
+```
 
 That's it! Although keep in mind that since the project is relatively new, you might encounter some bugs here and there.
 
