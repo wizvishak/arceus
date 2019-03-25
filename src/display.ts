@@ -6,35 +6,14 @@ import fs from "fs";
 import clipboardy from "clipboardy";
 import path from "path";
 import Encryption from "./encryption";
-
-const tokenPattern: RegExp = /ND[a-z0-9]{22}\.D[a-z]{2}[a-z0-9-]{3}\.[-a-z0-9_]{27}/gmi;
-
-const tips: string[] = [
-    "You can use the {bold}{prefix}sync{/bold} command to discard unsaved changes and reload saved state",
-    "You can use the {bold}{prefix}format{/bold} command to change the message format style",
-    "Toggle full-screen chat using the {bold}{prefix}fullscreen{/bold} command",
-    "Command autocomplete is supported, type {bold}{prefix}he{/bold} then press tab to try it!",
-    "Press {bold}ESC{/bold} anytime to clear the current input",
-    "Press {bold}UP{/bold} to edit your last message",
-    "Exiting with {bold}CTRL + C{/bold} is recommended since it will automatically save state",
-    "Press {bold}CTRL + X{/bold} to force exit without saving state"
-];
+import {tips, defaultAppOptions, defaultAppState} from "./constant";
+import Pattern from "./pattern";
 
 export type IAppNodes = {
     readonly messages: Widgets.BoxElement;
     readonly channels: Widgets.BoxElement;
     readonly input: Widgets.TextboxElement;
     readonly header: Widgets.BoxElement;
-}
-
-export type IPlugin = {
-    readonly name: string;
-    readonly description?: string;
-    readonly version: string;
-    readonly author?: string;
-
-    enabled(display: Display): void;
-    disabled(display: Display): void;
 }
 
 export type IAppState = {
@@ -68,119 +47,6 @@ export type IAppOptions = {
     readonly headerAutoHideTimeoutPerChar: number;
 }
 
-const defaultAppState: IAppState = {
-    globalMessages: false,
-    ignoreBots: false,
-    ignoreEmptyMessages: true,
-    muted: false,
-    messageFormat: "<{sender}> {message}",
-    trackList: [],
-    wordPins: [],
-    ignoredUsers: [],
-    tags: {},
-    theme: "default",
-    decriptionKey: "discord-term",
-    encrypt: false,
-
-    themeData: {
-        messages: {
-            foregroundColor: "white",
-            backgroundColor: "gray"
-        },
-
-        channels: {
-            foregroundColor: "white",
-            backgroundColor: "black",
-            foregroundColorHover: "white",
-            backgroundColorHover: "gray"
-        },
-
-        input: {
-            foregroundColor: "gray",
-            backgroundColor: "lightgray"
-        },
-
-        header: {
-            foregroundColor: "black",
-            backgroundColor: "white"
-        }
-    }
-};
-
-const defaultAppOptions: IAppOptions = {
-    maxMessages: 50,
-    commandPrefix: "/",
-    stateFilePath: "state.json",
-    headerAutoHideTimeoutPerChar: 100,
-
-    screen: blessed.screen({
-        smartCSR: true,
-        fullUnicode: true
-    }),
-
-    nodes: {
-        messages: blessed.box({
-            top: "0%",
-            left: "0%",
-            width: "100%",
-            height: "100%-3",
-
-            style: {
-                fg: defaultAppState.themeData.messages.foregroundColor,
-                bg: defaultAppState.themeData.messages.backgroundColor
-            },
-
-            scrollable: true,
-            tags: true,
-            padding: 1
-        }),
-
-        channels: blessed.box({
-            top: "0%",
-            left: "0%",
-            height: "100%",
-            width: "25%",
-            scrollable: true,
-            padding: 1,
-            hidden: true,
-
-            style: {
-                fg: defaultAppState.themeData.channels.foregroundColor,
-                bg: defaultAppState.themeData.channels.backgroundColor
-            } as any
-        }),
-
-        input: blessed.textbox({
-            style: {
-                fg: defaultAppState.themeData.input.foregroundColor,
-                bg: defaultAppState.themeData.input.backgroundColor
-            },
-
-            left: "0%",
-            bottom: "0",
-            width: "100%",
-            inputOnFocus: true,
-            height: "shrink",
-            padding: 1
-        }),
-
-        header: blessed.box({
-            style: {
-                fg: defaultAppState.themeData.header.foregroundColor,
-                bg: defaultAppState.themeData.header.backgroundColor
-            },
-
-            top: "0%",
-            left: "0%",
-            height: "0%+3",
-            padding: 1,
-            width: "100%",
-            hidden: true,
-            tags: true
-        })
-    }
-};
-
 export enum SpecialSenders {
     System = "System"
 }
@@ -194,7 +60,7 @@ export default class Display {
 
     private state: IAppState;
 
-    public constructor(options: Partial<IAppOptions> = defaultAppOptions, commands: Map<string, ICommandHandler> = new Map(), state: Partial<IAppState> = defaultAppState) {
+    public constructor(options?: Partial<IAppOptions>, commands: Map<string, ICommandHandler> = new Map(), state?: Partial<IAppState>) {
         this.options = {
             ...defaultAppOptions,
             ...options
@@ -1131,7 +997,7 @@ export default class Display {
             this.appendSystemMessage(`Attempting to login using saved token; Use {bold}${this.options.commandPrefix}forget{/bold} to forget the token`);
             this.login(this.state.token);
         }
-        else if (tokenPattern.test(clipboard)) {
+        else if (Pattern.token.test(clipboard)) {
             this.appendSystemMessage("Attempting to login using token in clipboard");
             this.login(clipboard);
         }
