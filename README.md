@@ -35,6 +35,7 @@ Pst. Consider **starring** the repository if you like it! <3
 [ ] Better, powerful plugin API
 [ ] Visual plugin manager
 [ ] UI re-write
+[ ] Tested codebase (unit testing)
 
 ### Tricks & Tips
 
