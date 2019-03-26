@@ -9,6 +9,7 @@ import Encryption from "./encryption";
 import {tips, defaultAppOptions, defaultAppState} from "./constant";
 import Pattern from "./pattern";
 import setupEvents from "./events";
+import setupInternalCommands from "./commands/internal";
 
 export type IAppNodes = {
     readonly messages: Widgets.BoxElement;
@@ -127,6 +128,15 @@ export default class Display {
         return this;
     }
 
+    public updateState(changes: Partial<IAppState>): this {
+        this.state = {
+            ...this.state,
+            ...changes
+        };
+
+        return this;
+    }
+
     public getState(): Readonly<IAppState> {
         return this.state;
     }
@@ -198,7 +208,7 @@ export default class Display {
         }
     }
 
-    private async syncState(): Promise<boolean> {
+    public async syncState(): Promise<boolean> {
         if (fs.existsSync(this.options.stateFilePath)) {
             return new Promise<boolean>((resolve) => {
                 fs.readFile(this.options.stateFilePath, (error: Error, data: Buffer) => {
@@ -402,347 +412,7 @@ export default class Display {
     }
 
     private setupInternalCommands(): this {
-        this.commands.set("login", (args: string[]) => {
-            this.login(args[0]);
-        });
-
-        this.commands.set("logout", async () => {
-            await this.shutdown();
-        });
-
-        this.commands.set("now", () => {
-            if (this.state.guild && this.state.channel) {
-                this.appendSystemMessage(`Currently on guild '{bold}${this.state.guild.name}{/bold}' # '{bold}${this.state.channel.name}{/bold}'`)
-            }
-            else if (this.state.guild) {
-                this.appendSystemMessage(`Currently on guild '{bold}${this.state.guild.name}{/bold}`);
-            }
-            else {
-                this.appendSystemMessage("No active guild");
-            }
-        });
-
-        this.commands.set("mute", () => {
-            this.state.muted = !this.state.muted;
-
-            if (this.state.muted) {
-                this.appendSystemMessage("Muted mode activated");
-            }
-            else {
-                this.appendSystemMessage("Muted mode is no longer activated");
-            }
-        });
-
-        this.commands.set("ignore", (args: string[]) => {
-            if (!args[0]) {
-                if (this.state.ignoredUsers.length === 0) {
-                    this.appendSystemMessage("Not ignoring anyone");
-
-                    return;
-                }
-
-                const usersString: string = this.state.ignoredUsers.map((userId: Snowflake) => `@{bold}${userId}{/bold}`).join(", ");
-
-                this.appendSystemMessage(`Currently ignoring messages from: ${usersString}`);
-            }
-            else if (this.client.user && this.client.user.id === args[0]) {
-                this.appendSystemMessage("You can't ignore yourself, silly");
-            }
-            else if (this.state.ignoredUsers.includes(args[0])) {
-                this.state.ignoredUsers.splice(this.state.ignoredUsers.indexOf(args[0]), 1);
-                this.appendSystemMessage(`Removed user @{bold}${args[0]}{/bold} from the ignore list`);
-            }
-            else {
-                if (this.state.trackList.includes(args[0])) {
-                    this.state.trackList.splice(this.state.trackList.indexOf(args[0]), 1);
-                    this.appendSystemMessage(`No longer tracking @{bold}${args[0]}{/bold}`);
-                }
-
-                this.state.ignoredUsers.push(args[0]);
-                this.appendSystemMessage(`Added user @{bold}${args[0]}{/bold} to the ignore list`);
-            }
-        });
-
-        this.commands.set("edit", async (args: string[]) => {
-            // TODO: Display message
-            if (!args[0] || !args[1] || !this.state.channel) {
-                return;
-            }
-
-            const message: Message = await this.state.channel.fetchMessage(args[0]) as Message;
-
-            if (message && message.editable) {
-                await message.edit(args.slice(1).join(" "));
-            }
-            else {
-                this.appendSystemMessage("That message doesn't exist or it is not editable");
-            }
-        });
-
-        this.commands.set("save", () => {
-            this.saveStateSync();
-        });
-
-        this.commands.set("format", (args: string[]) => {
-            this.state.messageFormat = args.join(" ");
-            this.appendSystemMessage(`Successfully changed format to '${this.state.messageFormat}'`);
-        });
-
-        this.commands.set("forget", () => {
-            if (this.state.token) {
-                this.state.token = undefined;
-                this.saveStateSync();
-            }
-        });
-
-        this.commands.set("encrypt", (args: string[]) => {
-            if (!args[0]) {
-                this.appendSystemMessage("You must provide a password");
-
-                return;
-            }
-
-            this.state.decriptionKey = args[0];
-            this.appendSystemMessage(`Using decryption key '{bold}${args[0]}{/bold}'`);
-        });
-
-        this.commands.set("doencrypt", () => {
-            this.state.encrypt = !this.state.encrypt;
-
-            if (this.state.encrypt) {
-                this.appendSystemMessage("Now encrypting messages");
-            }
-            else {
-                this.appendSystemMessage("No longer encrypting messages");
-            }
-        });
-
-        this.commands.set("theme", (args: string[]) => {
-            if (!args[0]) {
-                this.appendSystemMessage(`The current theme is '{bold}${this.state.theme}{/bold}'`)
-
-                return;
-            }
-
-            this.loadTheme(args[0]);
-        });
-
-        this.commands.set("themes", () => {
-            const themesPath: string = path.join(__dirname, "../", "themes");
-
-            if (fs.existsSync(themesPath)) {
-                let files: string[] = fs.readdirSync(themesPath);
-
-                for (let i: number = 0; i < files.length; i++) {
-                    files[i] = files[i].replace(".json", "");
-                }
-
-                const themesString: string = files.join("\n");
-
-                this.appendSystemMessage(themesString);
-            }
-            else {
-                this.appendSystemMessage("Themes directory does not exist");
-            }
-        });
-
-        this.commands.set("tag", (args: string[]) => {
-            if (!args[0]) {
-                const tags: string[] = this.getTags();
-
-                if (tags.length === 0) {
-                    this.appendSystemMessage("No tags have been set");
-
-                    return;
-                }
-
-                const tagsString: string = tags.map((tag: string) => `{bold}${tag}{/bold}`).join(", ");
-
-                this.appendSystemMessage(`Tags: ${tagsString}`);
-            }
-            else if (args.length === 2) {
-                this.setTag(args[0], args[1]);
-                this.appendSystemMessage(`Successfully saved tag '{bold}${args[0]}{/bold}'`);
-            }
-            else if (args.length === 1 && this.hasTag(args[0])) {
-                this.deleteTag(args[0]);
-                this.appendSystemMessage(`Successfully deleted tag '{bold}${args[0]}{/bold}'`);
-            }
-            else {
-                this.appendSystemMessage("Such tag does not exist");
-            }
-        });
-
-        this.commands.set("tip", () => {
-            // TODO: Replace all
-            const tip: string = tips[Utils.getRandomInt(0, tips.length - 1)]
-                .replace("{prefix}", this.options.commandPrefix);
-
-            this.showHeader(tip, true);
-        });
-
-        this.commands.set("dm", async (args: string[]) => {
-            if (!args[0] || !args[1]) {
-                this.appendSystemMessage("Expecting both recipient and message arguments");
-
-                return;
-            }
-
-            if (this.client.users.has(args[0])) {
-                const recipient: User = this.client.users.get(args[0]) as User;
-
-                (await recipient.createDM()).send(args.slice(1).join(" ")).catch((error: Error) => {
-                    this.appendSystemMessage(`Unable to send message: ${error.message}`);
-                });
-            }
-            else {
-                this.appendSystemMessage("Such user does not exist or has not been cached");
-            }
-        });
-
-        this.commands.set("fullscreen", () => {
-            this.toggleChannels();
-        });
-
-        this.commands.set("me", () => {
-            // TODO: Add valid method to check if logged in
-            if (this.client.user) {
-                this.appendSystemMessage(`Logged in as {bold}${this.client.user.tag}{/bold} | {bold}${Math.round(this.client.ping)}{/bold}ms`);
-            }
-            else {
-                this.appendSystemMessage("Not logged in");
-            }
-        });
-
-        this.commands.set("sync", () => {
-            this.syncState();
-        });
-
-        this.commands.set("pin", (args: string[]) => {
-            if (!args[0]) {
-                if (this.state.wordPins.length === 0) {
-                    this.appendSystemMessage("No set word pins");
-
-                    return;
-                }
-
-                const wordPinsString: string = this.state.wordPins.map((pin: string) => `{bold}${pin}{/bold}`).join(", ");
-
-                this.appendSystemMessage(`Word pins: ${wordPinsString}`);
-            }
-            else if (this.state.wordPins.includes(args[0])) {
-                this.state.wordPins.splice(this.state.wordPins.indexOf(args[0]), 1);
-                this.appendSystemMessage(`Removed word '{bold}${args[0]}{/bold}' from pins`);
-            }
-            else {
-                this.state.wordPins.push(args[0]);
-                this.appendSystemMessage(`Added word '{bold}${args[0]}{/bold}' to pins`);
-            }
-        });
-
-        this.commands.set("track", (args: string[]) => {
-            if (!args[0]) {
-                if (this.state.trackList.length === 0) {
-                    this.appendSystemMessage("Not tracking anyone");
-
-                    return;
-                }
-
-                const usersString: string = this.state.trackList.map((userId: Snowflake) => `@{bold}${userId}{/bold}`).join(", ");
-
-                this.appendSystemMessage(`Tracking users: ${usersString}`);
-            }
-            else if (this.client.user && this.client.user.id === args[0]) {
-                this.appendSystemMessage("You can't track yourself, silly");
-            }
-            else if (this.state.trackList.includes(args[0])) {
-                this.state.trackList.splice(this.state.trackList.indexOf(args[0]), 1);
-                this.appendSystemMessage(`No longer tracking @{bold}${args[0]}{/bold}`);
-            }
-            else if (this.client.users.has(args[0])) {
-                if (this.state.ignoredUsers.includes(args[0])) {
-                    this.appendSystemMessage("You must first stop ignoring that user");
-
-                    return;
-                }
-
-                this.state.trackList.push(args[0]);
-                this.appendSystemMessage(`Now tracking @{bold}${args[0]}{/bold}`);
-            }
-            else {
-                this.appendSystemMessage("No such user cached");
-            }
-        });
-
-        this.commands.set("help", () => {
-            let helpString: string = "";
-
-            for (let [name, handler] of this.commands) {
-                helpString += `\n\t${name}`;
-            }
-
-            this.appendSystemMessage(`Commands available: \n${helpString}\n`);
-        });
-
-        this.commands.set("global", () => {
-            this.state.globalMessages = !this.state.globalMessages;
-
-            if (this.state.globalMessages) {
-                this.appendSystemMessage("Displaying global messages");
-            }
-            else {
-                this.appendSystemMessage("No longer displaying global messages");
-            }
-        });
-
-        this.commands.set("bots", () => {
-            this.state.ignoreBots = !this.state.ignoreBots;
-
-            if (this.state.ignoreBots) {
-                this.appendSystemMessage("No longer displaying bot messages");
-            }
-            else {
-                this.appendSystemMessage("Displaying bot messages");
-            }
-        });
-
-        this.commands.set("clear", () => {
-            this.options.nodes.messages.setContent("");
-            this.render();
-        });
-
-        this.commands.set("c", (args: string[]) => {
-            if (!this.state.guild) {
-                this.appendSystemMessage("No active guild");
-            }
-            else if (this.state.guild.channels.has(args[0])) {
-                // TODO: Verify that it's a text channel
-                this.setActiveChannel(this.state.guild.channels.get(args[0]) as TextChannel);
-            }
-            else {
-                const channel: TextChannel = this.state.guild.channels.array().find((channel) => channel.type === "text" && (channel.name === args[0] || "#" + channel.name === args[0])) as TextChannel;
-
-                if (channel) {
-                    this.setActiveChannel(channel as TextChannel);
-                }
-                else {
-                    this.appendSystemMessage(`Such channel does not exist in guild '${this.state.guild.name}'`);
-                }
-            }
-        });
-
-        this.commands.set("g", (args: string[]) => {
-            if (this.client.guilds.has(args[0])) {
-                this.setActiveGuild(this.client.guilds.get(args[0]) as Guild);
-            }
-            else {
-                this.appendSystemMessage("Such guild does not exist");
-            }
-        });
-
-        this.commands.set("reset", () => {
-            this.render(true);
-        });
+        setupInternalCommands(this);
 
         return this;
     }
