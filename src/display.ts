@@ -1,4 +1,4 @@
-import {TextChannel, Guild, Client, Message, Channel, Snowflake, User, DMChannel} from "discord.js";
+import {TextChannel, Guild, Client, Message, Channel, Snowflake, DMChannel} from "discord.js";
 import Utils from "./utils";
 import blessed, {Widgets} from "blessed";
 import chalk from "chalk";
@@ -6,10 +6,11 @@ import fs from "fs";
 import clipboardy from "clipboardy";
 import path from "path";
 import Encryption from "./encryption";
-import {tips, defaultAppOptions, defaultAppState} from "./constant";
+import {defaultAppOptions, defaultAppState} from "./constant";
 import Pattern from "./pattern";
 import setupEvents from "./events";
 import setupInternalCommands from "./commands/internal";
+import {EventEmitter} from "events";
 
 export type IAppNodes = {
     readonly messages: Widgets.BoxElement;
@@ -19,25 +20,25 @@ export type IAppNodes = {
 }
 
 export type IAppState = {
-    channel?: TextChannel;
-    guild?: Guild;
-    globalMessages: boolean;
-    ignoreBots: boolean;
-    ignoreEmptyMessages: boolean;
-    muted: boolean;
-    messageFormat: string;
-    lastMessage?: Message;
-    typingTimeout?: NodeJS.Timeout;
-    trackList: Snowflake[];
-    wordPins: string[];
-    ignoredUsers: Snowflake[];
-    autoHideHeaderTimeout?: NodeJS.Timer;
-    tags: any;
-    theme: string;
-    themeData: any;
-    decriptionKey: string;
-    encrypt: boolean;
-    token?: string;
+    readonly channel?: TextChannel;
+    readonly guild?: Guild;
+    readonly globalMessages: boolean;
+    readonly ignoreBots: boolean;
+    readonly ignoreEmptyMessages: boolean;
+    readonly muted: boolean;
+    readonly messageFormat: string;
+    readonly lastMessage?: Message;
+    readonly typingTimeout?: NodeJS.Timeout;
+    readonly trackList: Snowflake[];
+    readonly wordPins: string[];
+    readonly ignoredUsers: Snowflake[];
+    readonly autoHideHeaderTimeout?: NodeJS.Timer;
+    readonly tags: any;
+    readonly theme: string;
+    readonly themeData: any;
+    readonly decriptionKey: string;
+    readonly encrypt: boolean;
+    readonly token?: string;
 }
 
 export type IAppOptions = {
@@ -55,14 +56,30 @@ export enum SpecialSenders {
 
 export type ICommandHandler = (args: string[], display: Display) => void;
 
-export default class Display {
+export default class Display extends EventEmitter {
+    /**
+     * Instance options for the application.
+     */
     public readonly options: IAppOptions;
+
+    /**
+     * The Discord client class instance.
+     */
     public readonly client: Client;
+
+    /**
+     * Registered commands usable by the client.
+     */
     public readonly commands: Map<string, ICommandHandler>;
 
+    /**
+     * The current application state.
+     */
     private state: IAppState;
 
     public constructor(options?: Partial<IAppOptions>, commands: Map<string, ICommandHandler> = new Map(), state?: Partial<IAppState>) {
+        super();
+
         this.options = {
             ...defaultAppOptions,
             ...options
@@ -78,10 +95,14 @@ export default class Display {
     }
 
     public async setup(init: boolean = true): Promise<this> {
-        // Discord Events
+        // Discord events.
         this.client.on("ready", () => {
             this.hideHeader();
-            this.state.token = this.client.token;
+
+            this.updateState({
+                token: this.client.token
+            });
+            
             this.appendSystemMessage(`Successfully connected as {bold}${this.client.user.tag}{/bold}`);
 
             const firstGuild: Guild = this.client.guilds.first();
@@ -109,13 +130,13 @@ export default class Display {
             this.appendSystemMessage(`Left guild '{bold}${guild.name}{/bold}' (${guild.memberCount} members)`);
         });
 
-        // Append Nodes
+        // Append nodes.
         this.options.screen.append(this.options.nodes.input);
         this.options.screen.append(this.options.nodes.messages);
         this.options.screen.append(this.options.nodes.channels);
         this.options.screen.append(this.options.nodes.header);
 
-        // Sync State
+        // Sync state.
         await this.syncState();
 
         // Load & apply saved theme
@@ -128,11 +149,22 @@ export default class Display {
         return this;
     }
 
+    /**
+     * Change the application's state, triggering
+     * a state change event.
+     */
     public updateState(changes: Partial<IAppState>): this {
+        this.emit("stateWillChange");
+
+        const previousState: IAppState = this.state;
+
         this.state = {
             ...this.state,
             ...changes
         };
+
+        // Fire the state change event. Provide the old and new state.
+        this.emit("stateChanged", this.state, previousState);
 
         return this;
     }
@@ -143,7 +175,9 @@ export default class Display {
 
     private handleMessage(msg: Message): void {
         if (msg.author.id === this.client.user.id) {
-            this.state.lastMessage = msg;
+            this.updateState({
+                lastMessage: msg
+            });
         }
 
         if (this.state.ignoredUsers.includes(msg.author.id)) {
@@ -208,6 +242,10 @@ export default class Display {
         }
     }
 
+    /**
+     * Load and apply previously saved state from the
+     * file system.
+     */
     public async syncState(): Promise<boolean> {
         if (fs.existsSync(this.options.stateFilePath)) {
             return new Promise<boolean>((resolve) => {
@@ -295,9 +333,11 @@ export default class Display {
         if (!this.state.muted && this.state.guild && this.state.channel && this.state.typingTimeout === undefined) {
             this.state.channel.startTyping();
 
-            this.state.typingTimeout = setTimeout(() => {
-                this.stopTyping();
-            }, 10000);
+            this.updateState({
+                typingTimeout: setTimeout(() => {
+                    this.stopTyping();
+                }, 10000)
+            });
         }
 
         return this;
@@ -306,7 +346,11 @@ export default class Display {
     public stopTyping(): this {
         if (this.state.guild && this.state.channel && this.state.typingTimeout !== undefined) {
             clearTimeout(this.state.typingTimeout);
-            this.state.typingTimeout = undefined;
+
+            this.updateState({
+                typingTimeout: undefined
+            });
+
             this.state.channel.stopTyping();
         }
 
@@ -455,8 +499,10 @@ export default class Display {
             return this;
         }
 
-        this.state.theme = name;
-        this.state.themeData = data;
+        this.updateState({
+            theme: name,
+            themeData: data
+        });
 
         // Messages
         this.options.nodes.messages.style.fg = this.state.themeData.messages.foregroundColor;
@@ -583,7 +629,10 @@ export default class Display {
     }
 
     public setActiveGuild(guild: Guild): this {
-        this.state.guild = guild;
+        this.updateState({
+            guild
+        });
+
         this.appendSystemMessage(`Switched to guild '{bold}${this.state.guild.name}{/bold}'`);
 
         const defaultChannel: TextChannel | null = Utils.findDefaultChannel(this.state.guild);
@@ -622,7 +671,9 @@ export default class Display {
                 clearTimeout(this.state.autoHideHeaderTimeout);
             }
 
-            this.state.autoHideHeaderTimeout = setTimeout(this.hideHeader.bind(this), text.length * this.options.headerAutoHideTimeoutPerChar);
+            this.updateState({
+                autoHideHeaderTimeout: setTimeout(this.hideHeader.bind(this), text.length * this.options.headerAutoHideTimeoutPerChar)
+            });
         }
 
         this.render();
@@ -649,7 +700,12 @@ export default class Display {
 
     public setActiveChannel(channel: TextChannel): this {
         this.stopTyping();
-        this.state.channel = channel;
+
+        this.updateState({
+            channel
+        });
+
+        
         this.updateTitle();
         this.appendSystemMessage(`Switched to channel '{bold}${this.state.channel.name}{/bold}'`);
 
