@@ -156,8 +156,10 @@ export default class Display extends EventEmitter {
     public updateState(changes: Partial<IAppState>): this {
         this.emit("stateWillChange");
 
+        // Store current state as previous state.
         const previousState: IAppState = this.state;
 
+        // Update the state.
         this.state = {
             ...this.state,
             ...changes
@@ -169,6 +171,9 @@ export default class Display extends EventEmitter {
         return this;
     }
 
+    /**
+     * Retrieve the current application state.
+     */
     public getState(): Readonly<IAppState> {
         return this.state;
     }
