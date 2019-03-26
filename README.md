@@ -27,19 +27,19 @@ Pst. Consider **starring** the repository if you like it! <3
 
 ### Planned Features
 
-[ ] Auto-complete pop-up
+- [ ] Auto-complete pop-up
 
-[ ] Status bar (current channel, guild, etc.)
+- [ ] Status bar (current channel, guild, etc.)
 
-[ ] Message logging (with file-based or database support)
+- [ ] Message logging (with file-based or database support)
 
-[ ] Better, powerful plugin API
+- [ ] Better, powerful plugin API
 
-[ ] Visual plugin manager
+- [ ] Visual plugin manager
 
-[ ] UI re-write
+- [ ] UI re-write
 
-[ ] Tested codebase (unit testing)
+- [ ] Tested codebase (unit testing)
 
 ### Tricks & Tips
 
