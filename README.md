@@ -14,7 +14,7 @@ Although it's intended to be used with a **bot token** which is 100% compliant w
 
 Setting up is extremely easy. Just issue the following commands:
 
-```bash
+```shell
 $ npm install --global discord-term
 $ dterm
 ```
