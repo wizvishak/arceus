@@ -8,6 +8,7 @@ import path from "path";
 import Encryption from "./encryption";
 import {tips, defaultAppOptions, defaultAppState} from "./constant";
 import Pattern from "./pattern";
+import setupEvents from "./events";
 
 export type IAppNodes = {
     readonly messages: Widgets.BoxElement;
@@ -124,6 +125,10 @@ export default class Display {
         }
 
         return this;
+    }
+
+    public getState(): Readonly<IAppState> {
+        return this.state;
     }
 
     private handleMessage(msg: Message): void {
@@ -271,117 +276,7 @@ export default class Display {
     }
 
     private setupEvents(): this {
-        // Screen
-        this.options.screen.key("C-c", async () => {
-            await this.shutdown();
-        });
-
-        this.options.screen.key("C-x", () => {
-            process.exit(0);
-        });
-
-        this.options.screen.key("space", () => {
-            this.options.nodes.input.focus();
-        });
-
-        // Input
-        this.options.nodes.input.on("keypress", this.startTyping.bind(this));
-
-        this.options.nodes.input.key("tab", () => {
-            const rawInput: string = this.getInput();
-            const input: string = rawInput.substr(this.options.commandPrefix.length);
-
-            if (rawInput.startsWith(this.options.commandPrefix) && input.length >= 2 && input.indexOf(" ") === -1) {
-                for (let [name, handler] of this.commands) {
-                    if (name.startsWith(input)) {
-                        this.clearInput(`${this.options.commandPrefix}${name} `);
-
-                        break;
-                    }
-                }
-            }
-        });
-
-        this.options.nodes.input.key("enter", () => {
-            let input: string = this.getInput(true);
-
-            const splitInput: string[] = input.split(" ");
-            const tags: string[] = this.getTags();
-
-            for (let i: number = 0; i < tags.length; i++) {
-                while (splitInput.includes(`$${tags[i]}`)) {
-                    splitInput[splitInput.indexOf(`$${tags[i]}`)] = this.getTag(tags[i]);
-                }
-            }
-
-            input = splitInput.join(" ").trim();
-
-            if (input === "") {
-                return;
-            }
-            else if (input.startsWith(this.options.commandPrefix)) {
-                const args: string[] = input.substr(this.options.commandPrefix.length).split(" ");
-                const base: string = args[0];
-
-                if (this.commands.has(base)) {
-                    args.splice(0, 1);
-                    (this.commands.get(base) as ICommandHandler)(args, this);
-                }
-                else {
-                    this.appendSystemMessage(`Unknown command: ${base}`);
-                }
-            }
-            else {
-                if (this.state.muted) {
-                    this.appendSystemMessage(`Message not sent; Muted mode is active. Please use {bold}${this.options.commandPrefix}mute{/bold} to toggle`);
-                }
-                else if (this.state.guild && this.state.channel) {
-                    let msg: string = input;
-
-                    if (this.state.encrypt) {
-                        msg = "$dt_" + Encryption.encrypt(msg, this.state.decriptionKey);
-                    }
-
-                    this.state.channel.send(msg).catch((error: Error) => {
-                        this.appendSystemMessage(`Unable to send message: ${error.message}`);
-                    });
-                }
-                else {
-                    this.appendSystemMessage("No active text channel");
-                }
-            }
-
-            this.clearInput();
-        });
-
-        this.options.nodes.input.key("escape", () => {
-            if (this.getInput().startsWith(this.options.commandPrefix)) {
-                this.clearInput(this.options.commandPrefix);
-            }
-            else {
-                this.clearInput();
-            }
-        });
-
-        this.options.nodes.input.key("up", () => {
-            if (this.state.lastMessage) {
-                this.clearInput(`${this.options.commandPrefix}edit ${this.state.lastMessage.id} ${this.state.lastMessage.content}`);
-            }
-        });
-
-        this.options.nodes.input.key("down", () => {
-            if (this.client.user && this.client.user.lastMessage && this.client.user.lastMessage.deletable) {
-                this.client.user.lastMessage.delete();
-            }
-        });
-
-        this.options.nodes.input.key("C-c", async () => {
-            await this.shutdown();
-        });
-
-        this.options.nodes.input.key("C-x", () => {
-            process.exit(0);
-        });
+        setupEvents(this);
 
         return this;
     }
