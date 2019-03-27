@@ -2,7 +2,7 @@ import Display from "./display";
 import Encryption from "./encryption";
 
 export default function setupEvents(display: Display): void {
-    // Screen
+    // Screen.
     display.options.screen.key("C-c", async () => {
         await display.shutdown();
     });
@@ -15,7 +15,7 @@ export default function setupEvents(display: Display): void {
         display.options.nodes.input.focus();
     });
 
-    // Input
+    // Input.
     display.options.nodes.input.on("keypress", display.startTyping.bind(this));
 
     display.options.nodes.input.key("tab", () => {

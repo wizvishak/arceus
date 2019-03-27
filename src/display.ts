@@ -207,7 +207,7 @@ export default class Display extends EventEmitter {
                 content = Encryption.decrypt(content.substr(4), this.state.decriptionKey);
             }
             catch (error) {
-                // Don't show error
+                // Don't show the error.
                 //this.appendSystemMessage(`Could not decrypt message: ${error.message}`);
             }
         }
@@ -282,15 +282,15 @@ export default class Display extends EventEmitter {
 
     public showChannels(): this {
         if (this.options.nodes.channels.hidden) {
-            // Messages
+            // Messages.
             this.options.nodes.messages.width = "75%+2";
             this.options.nodes.messages.left = "25%";
 
-            // Input
+            // Input.
             this.options.nodes.input.width = "75%+2";
             this.options.nodes.input.left = "25%";
 
-            // Header
+            // Header.
             this.options.nodes.header.width = "75%+2";
             this.options.nodes.header.left = "25%";
 
@@ -303,15 +303,15 @@ export default class Display extends EventEmitter {
 
     public hideChannels(): this {
         if (!this.options.nodes.channels.hidden) {
-            // Messages
+            // Messages.
             this.options.nodes.messages.width = "100%";
             this.options.nodes.messages.left = "0%";
 
-            // Input
+            // Input.
             this.options.nodes.input.width = "100%";
             this.options.nodes.input.left = "0%";
 
-            // Header
+            // Header.
             this.options.nodes.header.width = "100%";
             this.options.nodes.header.left = "0%";
 
@@ -334,6 +334,10 @@ export default class Display extends EventEmitter {
         return this;
     }
 
+    /**
+     * Show the client as typing in the currently
+     * active channel.
+     */
     public startTyping(): this {
         if (!this.state.muted && this.state.guild && this.state.channel && this.state.typingTimeout === undefined) {
             this.state.channel.startTyping();
@@ -348,6 +352,10 @@ export default class Display extends EventEmitter {
         return this;
     }
 
+    /**
+     * Stop the client from typing in the currently
+     * active channel if applicable.
+     */
     public stopTyping(): this {
         if (this.state.guild && this.state.channel && this.state.typingTimeout !== undefined) {
             clearTimeout(this.state.typingTimeout);
@@ -390,6 +398,10 @@ export default class Display extends EventEmitter {
         return this;
     }
 
+    /**
+     * Destroy the client, save the state and exit
+     * the application.
+     */
     public async shutdown(code: number = 0): Promise<void> {
         this.stopTyping();
         await this.client.destroy();
@@ -402,7 +414,7 @@ export default class Display extends EventEmitter {
             return this;
         }
 
-        // Fixes "ghost" children bug
+        // Fixes "ghost" children bug.
         for (let i: number = 0; i < this.options.nodes.channels.children.length; i++) {
             this.options.nodes.channels.remove(this.options.nodes.channels.children[i]);
         }
@@ -412,8 +424,8 @@ export default class Display extends EventEmitter {
         for (let i: number = 0; i < channels.length; i++) {
             let channelName: string = channels[i].name;
 
-            // TODO: Use a constant for the pattern
-            // This fixes UI being messed up due to channel names containing unicode emojis
+            // TODO: Use a constant for the pattern.
+            // This fixes UI being messed up due to channel names containing unicode emojis.
             while (/[^a-z0-9-_?]+/gm.test(channelName)) {
                 channelName = channelName.replace(/[^a-z0-9-_]+/gm, "?");
             }
@@ -470,12 +482,12 @@ export default class Display extends EventEmitter {
         if (!name) {
             return;
         }
-        // TODO: Trivial expression
+        // TODO: Trivial expression.
         /*else if (this.state.theme === name) {
             return this;
         }*/
 
-        // TODO: Allow to change themes folder path (by option)
+        // TODO: Allow to change themes folder path (by option).
         const themePath: string = path.join(__dirname, "../", "themes", `${name}.json`);
 
         if (name === defaultAppState.theme) {
@@ -484,10 +496,10 @@ export default class Display extends EventEmitter {
         else if (fs.existsSync(themePath)) {
             this.appendSystemMessage(`Loading theme '{bold}${name}{/bold}' ...`);
 
-            // TODO: Verify schema
+            // TODO: Verify schema.
             const theme: any = fs.readFileSync(themePath).toString();
 
-            // TODO: Catch possible parsing errors
+            // TODO: Catch possible parsing errors.
             this.setTheme(name, JSON.parse(theme), theme.length);
         }
         else {
@@ -509,19 +521,19 @@ export default class Display extends EventEmitter {
             themeData: data
         });
 
-        // Messages
+        // Messages.
         this.options.nodes.messages.style.fg = this.state.themeData.messages.foregroundColor;
         this.options.nodes.messages.style.bg = this.state.themeData.messages.backgroundColor;
 
-        // Input
+        // Input.
         this.options.nodes.input.style.fg = this.state.themeData.input.foregroundColor;
         this.options.nodes.input.style.bg = this.state.themeData.input.backgroundColor;
 
-        // Channels
+        // Channels.
         this.options.nodes.channels.style.fg = this.state.themeData.channels.foregroundColor;
         this.options.nodes.channels.style.bg = this.state.themeData.channels.backgroundColor;
 
-        // Header
+        // Header.
         this.options.nodes.header.style.fg = this.state.themeData.header.foregroundColor;
         this.options.nodes.header.style.bg = this.state.themeData.header.backgroundColor;
 
@@ -663,11 +675,11 @@ export default class Display extends EventEmitter {
         this.options.nodes.header.content = `[!] ${text}`;
 
         if (!this.options.nodes.header.visible) {
-            // Messages
+            // Messages.
             this.options.nodes.messages.top = "0%+3";
             this.options.nodes.messages.height = "100%-6";
 
-            // Header
+            // Header.
             this.options.nodes.header.hidden = false;
         }
 
@@ -691,11 +703,11 @@ export default class Display extends EventEmitter {
             return false;
         }
 
-        // Messages
+        // Messages.
         this.options.nodes.messages.top = "0%";
         this.options.nodes.messages.height = "100%-3";
 
-        // Header
+        // Header.
         this.options.nodes.header.hidden = true;
 
         this.render();
@@ -717,7 +729,7 @@ export default class Display extends EventEmitter {
         return this;
     }
 
-    // TODO: Also include time
+    // TODO: Also include time.
     public appendMessage(sender: string, message: string, senderColor: string = "white", messageColor: string = this.state.themeData.messages.foregroundColor): this {
         let messageString: string = message;
 
@@ -734,7 +746,7 @@ export default class Display extends EventEmitter {
         }
 
         let line: string = this.state.messageFormat
-            // TODO: Catch error if sender color doesn't exist
+            // TODO: Catch error if sender color doesn't exist.
             .replace("{sender}", chalk[senderColor](sender))
             .replace("{message}", messageString);
 

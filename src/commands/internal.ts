@@ -70,7 +70,7 @@ export default function setupInternalCommands(display: Display): void {
     });
 
     display.commands.set("edit", async (args: string[]) => {
-        // TODO: Display message
+        // TODO: Display message.
         if (!args[0] || !args[1] || !display.getState().channel) {
             return;
         }
@@ -191,7 +191,7 @@ export default function setupInternalCommands(display: Display): void {
     });
 
     display.commands.set("tip", () => {
-        // TODO: Replace all
+        // TODO: Replace all.
         const tip: string = tips[Utils.getRandomInt(0, tips.length - 1)]
             .replace("{prefix}", display.options.commandPrefix);
 
@@ -222,7 +222,7 @@ export default function setupInternalCommands(display: Display): void {
     });
 
     display.commands.set("me", () => {
-        // TODO: Add valid method to check if logged in
+        // TODO: Add valid method to check if logged in.
         if (display.client.user) {
             display.appendSystemMessage(`Logged in as {bold}${display.client.user.tag}{/bold} | {bold}${Math.round(display.client.ping)}{/bold}ms`);
         }
@@ -337,7 +337,7 @@ export default function setupInternalCommands(display: Display): void {
             display.appendSystemMessage("No active guild");
         }
         else if (display.getState().guild.channels.has(args[0])) {
-            // TODO: Verify that it's a text channel
+            // TODO: Verify that it's a text channel.
             display.setActiveChannel(display.getState().guild.channels.get(args[0]) as TextChannel);
         }
         else {
