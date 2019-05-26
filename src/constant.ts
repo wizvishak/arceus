@@ -1,4 +1,4 @@
-import {IAppState, IAppOptions} from "./display";
+import {IState, IAppOptions} from "./display";
 import blessed from "blessed";
 
 export const tips: string[] = [
@@ -11,45 +11,6 @@ export const tips: string[] = [
     "Exiting with {bold}CTRL + C{/bold} is recommended since it will automatically save state",
     "Press {bold}CTRL + X{/bold} to force exit without saving state"
 ];
-
-export const defaultAppState: IAppState = {
-    globalMessages: false,
-    ignoreBots: false,
-    ignoreEmptyMessages: true,
-    muted: false,
-    messageFormat: "<{sender}> {message}",
-    trackList: [],
-    wordPins: [],
-    ignoredUsers: [],
-    tags: {},
-    theme: "default",
-    decriptionKey: "discord-term",
-    encrypt: false,
-
-    themeData: {
-        messages: {
-            foregroundColor: "white",
-            backgroundColor: "gray"
-        },
-
-        channels: {
-            foregroundColor: "white",
-            backgroundColor: "black",
-            foregroundColorHover: "white",
-            backgroundColorHover: "gray"
-        },
-
-        input: {
-            foregroundColor: "gray",
-            backgroundColor: "lightgray"
-        },
-
-        header: {
-            foregroundColor: "black",
-            backgroundColor: "white"
-        }
-    }
-};
 
 export const defaultAppOptions: IAppOptions = {
     maxMessages: 50,
