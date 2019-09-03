@@ -2,9 +2,9 @@
 
 An extensible Discord terminal client. Can be used with bot or user tokens.
 
-**Disclaimer**: Self-bots are against ToS and therefore discouraged. I am not responsible for any loss or restriction whatsoever caused by using self-bots or this software.
+**Disclaimer**: So-called "self-bots" are against Discord's Terms of Service and therefore discouraged. I am not responsible for any loss or restriction whatsoever caused by using self-bots or this software. That being said, there's no one stopping you from risking using an account, so go head!
 
-Although it's intended to be used with a **bot token** which is 100% compliant with Discord's ToS.
+Please note that this program is intended to be used with a **bot token** which is 100% compliant with Discord's Terms of Service.
 
 ### Screenshots
 
