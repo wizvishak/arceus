@@ -29,7 +29,8 @@
     },
     "files": [
         "dist",
-        "themes"
+        "themes",
+        "plugins"
     ],
     "bin": {
         "dterm": "dist/app.js"

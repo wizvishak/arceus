@@ -19,6 +19,7 @@ export const defaultAppOptions: IAppOptions = {
     maxMessages: 50,
     commandPrefix: "/",
     stateFilePath: "state.json",
+    pluginsPath: "plugins",
     headerAutoHideTimeoutPerChar: 100,
 
     screen: blessed.screen({

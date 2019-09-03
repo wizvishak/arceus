@@ -39,6 +39,8 @@ export interface IAppOptions extends IStateOptions {
     readonly initialState: Partial<IState>;
 
     readonly clientOptions: ClientOptions;
+
+    readonly pluginsPath: string;
 }
 
 export enum SpecialSenders {
