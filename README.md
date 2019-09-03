@@ -6,8 +6,6 @@ An extensible Discord terminal client. Can be used with bot or user tokens.
 
 Although it's intended to be used with a **bot token** which is 100% compliant with Discord's ToS.
 
-[If you wish to contact me or for support click here](https://discord.gg/kmFDMwT)
-
 ### Screenshots
 
 ![Discord Terminal](https://i.imgur.com/CBbhXTP.gif)
@@ -16,7 +14,7 @@ Although it's intended to be used with a **bot token** which is 100% compliant w
 
 Setting up is extremely easy. Just issue the following commands:
 
-```bash
+```shell
 $ npm install --global discord-term
 $ dterm
 ```
@@ -26,6 +24,22 @@ That's it! Although keep in mind that since the project is relatively new, you m
 **This project has been tested and verified as working on native Ubuntu terminal and Windows command prompt + PowerShell using Node.js 10**
 
 Pst. Consider **starring** the repository if you like it! <3
+
+### Planned Features
+
+- [ ] Auto-complete pop-up
+
+- [ ] Status bar (current channel, guild, etc.)
+
+- [ ] Message logging (with file-based or database support)
+
+- [ ] Better, powerful plugin API
+
+- [ ] Visual plugin manager
+
+- [ ] UI re-write
+
+- [ ] Tested codebase (unit testing)
 
 ### Tricks & Tips
 
