@@ -1,11 +1,15 @@
-import Display from "./display";
+import App from "./app";
 
 export type IPlugin = {
     readonly name: string;
+
     readonly description?: string;
+
     readonly version: string;
+
     readonly author?: string;
 
-    enabled(display: Display): void;
-    disabled(display: Display): void;
+    enabled(app: App): void;
+
+    disabled(app: App): void;
 }

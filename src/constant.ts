@@ -1,5 +1,6 @@
-import {IState, IAppOptions} from "./display";
+import {IAppOptions} from "./app";
 import blessed from "blessed";
+import {defaultState} from "./state/stateConstants";
 
 export const tips: string[] = [
     "You can use the {bold}{prefix}sync{/bold} command to discard unsaved changes and reload saved state",
@@ -13,6 +14,8 @@ export const tips: string[] = [
 ];
 
 export const defaultAppOptions: IAppOptions = {
+    clientOptions: {},
+    initialState: {},
     maxMessages: 50,
     commandPrefix: "/",
     stateFilePath: "state.json",
@@ -31,8 +34,8 @@ export const defaultAppOptions: IAppOptions = {
             height: "100%-3",
 
             style: {
-                fg: defaultAppState.themeData.messages.foregroundColor,
-                bg: defaultAppState.themeData.messages.backgroundColor
+                fg: defaultState.themeData.messages.foregroundColor,
+                bg: defaultState.themeData.messages.backgroundColor
             },
 
             scrollable: true,
@@ -50,15 +53,15 @@ export const defaultAppOptions: IAppOptions = {
             hidden: true,
 
             style: {
-                fg: defaultAppState.themeData.channels.foregroundColor,
-                bg: defaultAppState.themeData.channels.backgroundColor
+                fg: defaultState.themeData.channels.foregroundColor,
+                bg: defaultState.themeData.channels.backgroundColor
             } as any
         }),
 
         input: blessed.textbox({
             style: {
-                fg: defaultAppState.themeData.input.foregroundColor,
-                bg: defaultAppState.themeData.input.backgroundColor
+                fg: defaultState.themeData.input.foregroundColor,
+                bg: defaultState.themeData.input.backgroundColor
             },
 
             left: "0%",
@@ -71,8 +74,8 @@ export const defaultAppOptions: IAppOptions = {
 
         header: blessed.box({
             style: {
-                fg: defaultAppState.themeData.header.foregroundColor,
-                bg: defaultAppState.themeData.header.backgroundColor
+                fg: defaultState.themeData.header.foregroundColor,
+                bg: defaultState.themeData.header.backgroundColor
             },
 
             top: "0%",

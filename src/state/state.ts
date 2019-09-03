@@ -2,7 +2,7 @@ import {Snowflake, TextChannel, Guild, Message} from "discord.js";
 import {EventEmitter} from "events";
 import fs from "fs";
 import {defaultState} from "./stateConstants";
-import Display from "../display";
+import App from "../app";
 
 export interface IStateOptions {
     readonly stateFilePath: string;
@@ -53,9 +53,9 @@ export default class State extends EventEmitter {
 
     protected state: IState;
 
-    protected readonly app: Display;
+    protected readonly app: App;
 
-    public constructor(app: Display, options: IStateOptions, initialState?: Partial<IState>) {
+    public constructor(app: App, options: IStateOptions, initialState?: Partial<IState>) {
         super();
 
         this.app = app;

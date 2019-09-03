@@ -1,9 +1,19 @@
 import chalk from "chalk";
-import {SpecialSenders} from "../display";
+import App, {SpecialSenders} from "../app";
+
+export type MessageFactoryOptions = {
+
+};
 
 export default class MessageFactory {
+    protected readonly app: App;
+
+    public constructor(app: App) {
+        this.app = app;
+    }
+
     // TODO: Also include time.
-    public create(sender: string, message: string, senderColor: string = "white", messageColor: string = this.state.themeData.messages.foregroundColor): this {
+    public create(sender: string, message: string, senderColor: string = "white", messageColor: string = this.app.state.get().themeData.messages.foregroundColor): this {
         let messageString: string = message;
 
         if (messageColor.startsWith("#")) {
@@ -18,7 +28,7 @@ export default class MessageFactory {
             messageString = ((chalk as any)[messageColor] as any)(message);
         }
 
-        let line: string = this.state.messageFormat
+        let line: string = this.app.state.get().messageFormat
             // TODO: Catch error if sender color doesn't exist.
             .replace("{sender}", chalk[senderColor](sender))
             .replace("{message}", messageString);
@@ -26,18 +36,18 @@ export default class MessageFactory {
         if (sender !== `{bold}${SpecialSenders.System}{/bold}`) {
             const splitLine: string[] = line.split(" ");
 
-            for (let i: number = 0; i < this.state.wordPins.length; i++) {
-                while (splitLine.includes(this.state.wordPins[i])) {
-                    splitLine[splitLine.indexOf(this.state.wordPins[i])] = chalk.bgCyan.white(this.state.wordPins[i]);
+            for (let i: number = 0; i < this.app.state.get().wordPins.length; i++) {
+                while (splitLine.includes(this.app.state.get().wordPins[i])) {
+                    splitLine[splitLine.indexOf(this.app.state.get().wordPins[i])] = chalk.bgCyan.white(this.app.state.get().wordPins[i]);
                 }
             }
 
             line = splitLine.join(" ");
         }
 
-        this.options.nodes.messages.pushLine(line);
-        this.options.nodes.messages.setScrollPerc(100);
-        this.render();
+        this.app.options.nodes.messages.pushLine(line);
+        this.app.options.nodes.messages.setScrollPerc(100);
+        this.app.render();
 
         return this;
     }

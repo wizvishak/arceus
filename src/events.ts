@@ -1,31 +1,31 @@
-import Display from "./display";
+import App from "./app";
 import Encryption from "./encryption";
 
-export default function setupEvents(display: Display): void {
+export default function setupEvents(app: App): void {
     // Screen.
-    display.options.screen.key("C-c", async () => {
-        await display.shutdown();
+    app.options.screen.key("C-c", async () => {
+        await app.shutdown();
     });
 
-    display.options.screen.key("C-x", () => {
+    app.options.screen.key("C-x", () => {
         process.exit(0);
     });
 
-    display.options.screen.key("space", () => {
-        display.options.nodes.input.focus();
+    app.options.screen.key("space", () => {
+        app.options.nodes.input.focus();
     });
 
     // Input.
-    display.options.nodes.input.on("keypress", display.startTyping.bind(this));
+    app.options.nodes.input.on("keypress", app.startTyping.bind(this));
 
-    display.options.nodes.input.key("tab", () => {
-        const rawInput: string = display.getInput();
-        const input: string = rawInput.substr(display.options.commandPrefix.length);
+    app.options.nodes.input.key("tab", () => {
+        const rawInput: string = app.getInput();
+        const input: string = rawInput.substr(app.options.commandPrefix.length);
 
-        if (rawInput.startsWith(display.options.commandPrefix) && input.length >= 2 && input.indexOf(" ") === -1) {
-            for (let [name, handler] of display.commands) {
+        if (rawInput.startsWith(app.options.commandPrefix) && input.length >= 2 && input.indexOf(" ") === -1) {
+            for (let [name, handler] of app.commands) {
                 if (name.startsWith(input)) {
-                    display.clearInput(`${display.options.commandPrefix}${name} `);
+                    app.clearInput(`${app.options.commandPrefix}${name} `);
 
                     break;
                 }
@@ -33,15 +33,15 @@ export default function setupEvents(display: Display): void {
         }
     });
 
-    display.options.nodes.input.key("enter", () => {
-        let input: string = display.getInput(true);
+    app.options.nodes.input.key("enter", () => {
+        let input: string = app.getInput(true);
 
         const splitInput: string[] = input.split(" ");
-        const tags: string[] = display.getTags();
+        const tags: string[] = app.getTags();
 
         for (let i: number = 0; i < tags.length; i++) {
             while (splitInput.includes(`$${tags[i]}`)) {
-                splitInput[splitInput.indexOf(`$${tags[i]}`)] = display.getTag(tags[i]);
+                splitInput[splitInput.indexOf(`$${tags[i]}`)] = app.getTag(tags[i]);
             }
         }
 
@@ -50,67 +50,67 @@ export default function setupEvents(display: Display): void {
         if (input === "") {
             return;
         }
-        else if (input.startsWith(display.options.commandPrefix)) {
-            const args: string[] = input.substr(display.options.commandPrefix.length).split(" ");
+        else if (input.startsWith(app.options.commandPrefix)) {
+            const args: string[] = input.substr(app.options.commandPrefix.length).split(" ");
             const base: string = args[0];
 
-            if (display.commands.has(base)) {
+            if (app.commands.has(base)) {
                 args.splice(0, 1);
-                display.commands.get(base)!(args, this);
+                app.commands.get(base)!(args, this);
             }
             else {
-                display.message.system(`Unknown command: ${base}`);
+                app.message.system(`Unknown command: ${base}`);
             }
         }
         else {
-            if (display.state.get().muted) {
-                display.message.system(`Message not sent; Muted mode is active. Please use {bold}${display.options.commandPrefix}mute{/bold} to toggle`);
+            if (app.state.get().muted) {
+                app.message.system(`Message not sent; Muted mode is active. Please use {bold}${app.options.commandPrefix}mute{/bold} to toggle`);
             }
-            else if (display.state.get().guild && display.state.get().channel) {
+            else if (app.state.get().guild && app.state.get().channel) {
                 let msg: string = input;
 
-                if (display.state.get().encrypt) {
-                    msg = "$dt_" + Encryption.encrypt(msg, display.state.get().decriptionKey);
+                if (app.state.get().encrypt) {
+                    msg = "$dt_" + Encryption.encrypt(msg, app.state.get().decriptionKey);
                 }
 
-                display.state.get().channel.send(msg).catch((error: Error) => {
-                    display.message.system(`Unable to send message: ${error.message}`);
+                app.state.get().channel.send(msg).catch((error: Error) => {
+                    app.message.system(`Unable to send message: ${error.message}`);
                 });
             }
             else {
-                display.message.system("No active text channel");
+                app.message.system("No active text channel");
             }
         }
 
-        display.clearInput();
+        app.clearInput();
     });
 
-    display.options.nodes.input.key("escape", () => {
-        if (display.getInput().startsWith(display.options.commandPrefix)) {
-            display.clearInput(display.options.commandPrefix);
+    app.options.nodes.input.key("escape", () => {
+        if (app.getInput().startsWith(app.options.commandPrefix)) {
+            app.clearInput(app.options.commandPrefix);
         }
         else {
-            display.clearInput();
+            app.clearInput();
         }
     });
 
-    display.options.nodes.input.key("up", () => {
-        if (display.state.get().lastMessage) {
-            display.clearInput(`${display.options.commandPrefix}edit ${display.state.get().lastMessage.id} ${display.state.get().lastMessage.content}`);
+    app.options.nodes.input.key("up", () => {
+        if (app.state.get().lastMessage) {
+            app.clearInput(`${app.options.commandPrefix}edit ${app.state.get().lastMessage.id} ${app.state.get().lastMessage.content}`);
         }
     });
 
-    display.options.nodes.input.key("down", () => {
-        if (display.client.user && display.client.user.lastMessage && display.client.user.lastMessage.deletable) {
-            display.client.user.lastMessage.delete();
+    app.options.nodes.input.key("down", () => {
+        if (app.client.user && app.client.user.lastMessage && app.client.user.lastMessage.deletable) {
+            app.client.user.lastMessage.delete();
         }
     });
 
-    display.options.nodes.input.key("C-c", async () => {
-        await display.shutdown();
+    app.options.nodes.input.key("C-c", async () => {
+        await app.shutdown();
     });
 
-    display.options.nodes.input.key("C-x", () => {
+    app.options.nodes.input.key("C-x", () => {
         process.exit(0);
     });
 }
