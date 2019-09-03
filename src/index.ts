@@ -6,6 +6,9 @@ import App from "./app";
 
 const app: App = new App();
 
-app.setup().catch((reason: any) => {
-    // app.message.system(reason);
-});
+try {
+    app.setup();
+}
+catch (error) {
+    app.message.system(error);
+}
