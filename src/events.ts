@@ -16,7 +16,10 @@ export default function setupEvents(app: App): void {
     });
 
     // Input.
-    app.options.nodes.input.on("keypress", app.startTyping.bind(this));
+    app.options.nodes.input.on("keypress", () => {
+        // TODO: If logged in.
+        //app.startTyping();
+    });
 
     app.options.nodes.input.key("tab", () => {
         const rawInput: string = app.getInput();

@@ -75,10 +75,10 @@ export default class App extends EventEmitter {
             ...options
         };
 
+        this.state = new State(this, this.options, this.options.initialState);
         this.client = new Client(this.options.clientOptions);
         this.commands = commands;
         this.message = new MessageFactory(this);
-        this.state = new State(this, this.options, this.options.initialState);
     }
 
     public async setup(init: boolean = true): Promise<this> {
@@ -99,7 +99,7 @@ export default class App extends EventEmitter {
             }
 
             this.showChannels();
-            this.saveStateSync();
+            this.state.saveSync();
         });
 
         this.client.on("message", this.handleMessage.bind(this));
@@ -330,7 +330,7 @@ export default class App extends EventEmitter {
     public async shutdown(code: number = 0): Promise<void> {
         this.stopTyping();
         await this.client.destroy();
-        this.saveStateSync();
+        this.state.saveSync();
         process.exit(code);
     }
 
@@ -514,25 +514,6 @@ export default class App extends EventEmitter {
         }
 
         return false;
-    }
-
-    public saveStateSync(): this {
-        this.message.system("Saving application state ...");
-
-        const data: string = JSON.stringify({
-            ...this.state,
-            guild: undefined,
-            channel: undefined,
-            lastMessage: undefined,
-            typingTimeout: undefined,
-            autoHideHeaderTimeout: undefined,
-            themeData: undefined
-        });
-
-        fs.writeFileSync(this.options.stateFilePath, data);
-        this.message.system(`Application state saved @ '${this.options.stateFilePath}' (${data.length} bytes)`);
-
-        return this;
     }
 
     public login(token: string): this {

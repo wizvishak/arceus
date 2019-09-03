@@ -86,7 +86,7 @@ export default function setupInternalCommands(app: App): void {
     });
 
     app.commands.set("save", () => {
-        app.saveStateSync();
+        app.state.saveSync();
     });
 
     app.commands.set("format", (args: string[]) => {
@@ -103,7 +103,7 @@ export default function setupInternalCommands(app: App): void {
                 token: undefined
             });
 
-            app.saveStateSync();
+            app.state.saveSync();
         }
     });
 

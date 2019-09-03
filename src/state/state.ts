@@ -143,4 +143,23 @@ export default class State extends EventEmitter {
         fs.writeFileSync(this.options.stateFilePath, data);
         this.app.message.system(`Application state saved @ '${this.options.stateFilePath}' (${data.length} bytes)`);
     }
+
+    public saveSync(): this {
+        this.app.message.system("Saving application state ...");
+
+        const data: string = JSON.stringify({
+            ...this.state,
+            guild: undefined,
+            channel: undefined,
+            lastMessage: undefined,
+            typingTimeout: undefined,
+            autoHideHeaderTimeout: undefined,
+            themeData: undefined
+        });
+
+        fs.writeFileSync(this.options.stateFilePath, data);
+        this.app.message.system(`Application state saved @ '${this.options.stateFilePath}' (${data.length} bytes)`);
+
+        return this;
+    }
 }

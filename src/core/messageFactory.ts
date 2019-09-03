@@ -10,7 +10,7 @@ export default class MessageFactory {
 
     // TODO: Also include time.
     public create(sender: string, message: string, senderColor: string = "white", messageColor: string = this.app.state.get().themeData.messages.foregroundColor): this {
-        let messageString: string = message;
+        let messageString: string = message.toString();
 
         if (messageColor.startsWith("#")) {
             messageString = chalk.hex(messageColor)(messageString);

@@ -6,8 +6,6 @@ import App from "./app";
 
 const app: App = new App();
 
-async function init(): Promise<void> {
-    await app.setup();
-}
-
-init();
+app.setup().catch((reason: any) => {
+    // app.message.system(reason);
+});
