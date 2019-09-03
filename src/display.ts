@@ -1,4 +1,4 @@
-import {TextChannel, Guild, Client, Message, Channel, Snowflake, DMChannel} from "discord.js";
+import {TextChannel, Guild, Client, Message, Channel, DMChannel, ClientOptions} from "discord.js";
 import Utils from "./utils";
 import blessed, {Widgets} from "blessed";
 import chalk from "chalk";
@@ -6,13 +6,14 @@ import fs from "fs";
 import clipboardy from "clipboardy";
 import path from "path";
 import Encryption from "./encryption";
-import {defaultAppOptions, defaultAppState} from "./constant";
+import {defaultAppOptions} from "./constant";
 import Pattern from "./pattern";
 import setupEvents from "./events";
 import setupInternalCommands from "./commands/internal";
 import {EventEmitter} from "events";
 import Context from "./core/context";
-import {IState} from "./state/state";
+import State, {IState} from "./state/state";
+import {defaultState} from "./state/stateConstants";
 
 export type IAppNodes = {
     readonly messages: Widgets.BoxElement;
@@ -23,11 +24,20 @@ export type IAppNodes = {
 
 export type IAppOptions = {
     readonly maxMessages: number;
+
     readonly screen: Widgets.Screen
+
     readonly nodes: IAppNodes;
+
     readonly commandPrefix: string;
+
     readonly stateFilePath: string;
+
     readonly headerAutoHideTimeoutPerChar: number;
+
+    readonly initialState: Partial<IState>;
+
+    readonly clientOptions: ClientOptions;
 }
 
 export enum SpecialSenders {
@@ -54,7 +64,9 @@ export default class Display extends EventEmitter {
 
     public readonly context: Context;
 
-    public constructor(options?: Partial<IAppOptions>, commands: Map<string, ICommandHandler> = new Map(), state?: Partial<IState>) {
+    public readonly state: State;
+
+    public constructor(options?: Partial<IAppOptions>, commands: Map<string, ICommandHandler> = new Map()) {
         super();
 
         this.options = {
@@ -62,14 +74,10 @@ export default class Display extends EventEmitter {
             ...options
         };
 
-        this.state = {
-            ...defaultAppState,
-            ...state
-        };
-
-        this.client = new Client;
+        this.client = new Client(options.clientOptions);
         this.commands = commands;
         this.context = new Context();
+        this.state = new State(options.initialState);
     }
 
     public async setup(init: boolean = true): Promise<this> {
@@ -77,7 +85,7 @@ export default class Display extends EventEmitter {
         this.client.on("ready", () => {
             this.hideHeader();
 
-            this.updateState({
+            this.state.update({
                 token: this.client.token
             });
 
@@ -115,10 +123,10 @@ export default class Display extends EventEmitter {
         this.options.screen.append(this.options.nodes.header);
 
         // Sync state.
-        await this.syncState();
+        await this.state.sync();
 
-        // Load & apply saved theme
-        this.loadTheme(this.state.theme);
+        // Load & apply saved theme.
+        this.loadTheme(this.state.get().theme);
 
         if (init) {
             this.init();
@@ -127,32 +135,25 @@ export default class Display extends EventEmitter {
         return this;
     }
 
-    /**
-     * Retrieve the current application state.
-     */
-    public getState(): Readonly<IState> {
-        return this.state;
-    }
-
     private handleMessage(msg: Message): void {
         if (msg.author.id === this.client.user.id) {
-            this.updateState({
+            this.state.update({
                 lastMessage: msg
             });
         }
 
-        if (this.state.ignoredUsers.includes(msg.author.id)) {
+        if (this.state.get().ignoredUsers.includes(msg.author.id)) {
             return;
         }
-        else if (this.state.trackList.includes(msg.author.id)) {
+        else if (this.state.get().trackList.includes(msg.author.id)) {
             this.context.message.special("Track", msg.author.tag, msg.content);
 
             return;
         }
-        else if (this.state.ignoreBots && msg.author.bot && msg.author.id !== this.client.user.id) {
+        else if (this.state.get().ignoreBots && msg.author.bot && msg.author.id !== this.client.user.id) {
             return;
         }
-        else if (this.state.ignoreEmptyMessages && !msg.content) {
+        else if (this.state.get().ignoreEmptyMessages && !msg.content) {
             return;
         }
 
@@ -160,7 +161,7 @@ export default class Display extends EventEmitter {
 
         if (content.startsWith("$dt_")) {
             try {
-                content = Encryption.decrypt(content.substr(4), this.state.decriptionKey);
+                content = Encryption.decrypt(content.substr(4), this.state.get().decriptionKey);
             }
             catch (error) {
                 // Don't show the error.
@@ -176,7 +177,7 @@ export default class Display extends EventEmitter {
                 this.context.message.special(`${chalk.green("=>")} DM`, (msg.channel as DMChannel).recipient.tag, content, "blue");
             }
         }
-        else if (this.state.guild && this.state.channel && msg.channel.id === this.state.channel.id) {
+        else if (this.state.get().guild && this.state.get().channel && msg.channel.id === this.state.get().channel.id) {
             // TODO: Turn this into a function
             const modifiers: string[] = [];
 
@@ -198,42 +199,9 @@ export default class Display extends EventEmitter {
         else if (msg.channel.type === "dm") {
             this.context.message.special(`${chalk.green("<=")} DM`, msg.author.tag, content, "blue");
         }
-        else if (this.state.globalMessages) {
+        else if (this.state.get().globalMessages) {
             this.context.message.special("Global", msg.author.tag, content);
         }
-    }
-
-    /**
-     * Load and apply previously saved state from the
-     * file system.
-     */
-    public async syncState(): Promise<boolean> {
-        if (fs.existsSync(this.options.stateFilePath)) {
-            return new Promise<boolean>((resolve) => {
-                fs.readFile(this.options.stateFilePath, (error: Error, data: Buffer) => {
-                    if (error) {
-                        this.context.message.system(`There was an error while reading the state file: ${error.message}`);
-
-                        resolve(false);
-
-                        return;
-                    }
-
-                    this.state = {
-                        ...JSON.parse(data.toString()),
-                        guild: this.state.guild,
-                        channel: this.state.channel,
-                        themeData: this.state.themeData
-                    };
-
-                    this.context.message.system(`Synced state @ ${this.options.stateFilePath} (${data.length} bytes)`);
-
-                    resolve(true);
-                });
-            });
-        }
-
-        return false;
     }
 
     public showChannels(): this {
@@ -295,10 +263,10 @@ export default class Display extends EventEmitter {
      * active channel.
      */
     public startTyping(): this {
-        if (!this.state.muted && this.state.guild && this.state.channel && this.state.typingTimeout === undefined) {
-            this.state.channel.startTyping();
+        if (!this.state.get().muted && this.state.get().guild && this.state.get().channel && this.state.get().typingTimeout === undefined) {
+            this.state.get().channel.startTyping();
 
-            this.updateState({
+            this.state.update({
                 typingTimeout: setTimeout(() => {
                     this.stopTyping();
                 }, 10000)
@@ -313,14 +281,14 @@ export default class Display extends EventEmitter {
      * active channel if applicable.
      */
     public stopTyping(): this {
-        if (this.state.guild && this.state.channel && this.state.typingTimeout !== undefined) {
-            clearTimeout(this.state.typingTimeout);
+        if (this.state.get().guild && this.state.get().channel && this.state.get().typingTimeout !== undefined) {
+            clearTimeout(this.state.get().typingTimeout);
 
-            this.updateState({
+            this.state.update({
                 typingTimeout: undefined
             });
 
-            this.state.channel.stopTyping();
+            this.state.get().channel.stopTyping();
         }
 
         return this;
@@ -366,7 +334,7 @@ export default class Display extends EventEmitter {
     }
 
     public updateChannels(render: boolean = false): this {
-        if (!this.state.guild) {
+        if (!this.state.get().guild) {
             return this;
         }
 
@@ -375,7 +343,7 @@ export default class Display extends EventEmitter {
             this.options.nodes.channels.remove(this.options.nodes.channels.children[i]);
         }
 
-        const channels: TextChannel[] = this.state.guild.channels.array().filter((channel: Channel) => channel.type === "text") as TextChannel[];
+        const channels: TextChannel[] = this.state.get().guild.channels.array().filter((channel: Channel) => channel.type === "text") as TextChannel[];
 
         for (let i: number = 0; i < channels.length; i++) {
             let channelName: string = channels[i].name;
@@ -392,15 +360,15 @@ export default class Display extends EventEmitter {
 
             const channelNode: Widgets.BoxElement = blessed.box({
                 style: {
-                    bg: this.state.themeData.channels.backgroundColor,
-                    fg: this.state.themeData.channels.foregroundColor,
+                    bg: this.state.get().themeData.channels.backgroundColor,
+                    fg: this.state.get().themeData.channels.foregroundColor,
 
                     // TODO: Not working
-                    bold: this.state.channel !== undefined && this.state.channel.id === channels[i].id,
+                    bold: this.state.channel !== undefined && this.state.get().channel.id === channels[i].id,
 
                     hover: {
-                        bg: this.state.themeData.channels.backgroundColorHover,
-                        fg: this.state.themeData.channels.foregroundColorHover
+                        bg: this.state.get().themeData.channels.backgroundColorHover,
+                        fg: this.state.get().themeData.channels.foregroundColorHover
                     }
                 },
 
@@ -413,7 +381,7 @@ export default class Display extends EventEmitter {
             });
 
             channelNode.on("click", () => {
-                if (this.state.guild && this.state.channel && channels[i].id !== this.state.channel.id && this.state.guild.channels.has(channels[i].id)) {
+                if (this.state.get().guild && this.state.get().channel && channels[i].id !== this.state.get().channel.id && this.state.get().guild.channels.has(channels[i].id)) {
                     this.setActiveChannel(channels[i]);
                 }
             });
@@ -446,8 +414,8 @@ export default class Display extends EventEmitter {
         // TODO: Allow to change themes folder path (by option).
         const themePath: string = path.join(__dirname, "../", "themes", `${name}.json`);
 
-        if (name === defaultAppState.theme) {
-            this.setTheme(defaultAppState.theme, defaultAppState.themeData, 0);
+        if (name === defaultState.theme) {
+            this.setTheme(defaultState.theme, defaultState.themeData, 0);
         }
         else if (fs.existsSync(themePath)) {
             this.context.message.system(`Loading theme '{bold}${name}{/bold}' ...`);
@@ -472,26 +440,26 @@ export default class Display extends EventEmitter {
             return this;
         }
 
-        this.updateState({
+        this.state.update({
             theme: name,
             themeData: data
         });
 
         // Messages.
-        this.options.nodes.messages.style.fg = this.state.themeData.messages.foregroundColor;
-        this.options.nodes.messages.style.bg = this.state.themeData.messages.backgroundColor;
+        this.options.nodes.messages.style.fg = this.state.get().themeData.messages.foregroundColor;
+        this.options.nodes.messages.style.bg = this.state.get().themeData.messages.backgroundColor;
 
         // Input.
-        this.options.nodes.input.style.fg = this.state.themeData.input.foregroundColor;
-        this.options.nodes.input.style.bg = this.state.themeData.input.backgroundColor;
+        this.options.nodes.input.style.fg = this.state.get().themeData.input.foregroundColor;
+        this.options.nodes.input.style.bg = this.state.get().themeData.input.backgroundColor;
 
         // Channels.
-        this.options.nodes.channels.style.fg = this.state.themeData.channels.foregroundColor;
-        this.options.nodes.channels.style.bg = this.state.themeData.channels.backgroundColor;
+        this.options.nodes.channels.style.fg = this.state.get().themeData.channels.foregroundColor;
+        this.options.nodes.channels.style.bg = this.state.get().themeData.channels.backgroundColor;
 
         // Header.
-        this.options.nodes.header.style.fg = this.state.themeData.header.foregroundColor;
-        this.options.nodes.header.style.bg = this.state.themeData.header.backgroundColor;
+        this.options.nodes.header.style.fg = this.state.get().themeData.header.foregroundColor;
+        this.options.nodes.header.style.bg = this.state.get().themeData.header.backgroundColor;
 
         this.updateChannels();
         this.context.message.system(`Applied theme '${name}' (${length} bytes)`);
@@ -500,11 +468,11 @@ export default class Display extends EventEmitter {
     }
 
     private updateTitle(): this {
-        if (this.state.guild && this.state.channel) {
-            this.options.screen.title = `Discord Terminal @ ${this.state.guild.name} # ${this.state.channel.name}`;
+        if (this.state.get().guild && this.state.get().channel) {
+            this.options.screen.title = `Discord Terminal @ ${this.state.get().guild.name} # ${this.state.get().channel.name}`;
         }
-        else if (this.state.guild) {
-            this.options.screen.title = `Discord Terminal @ ${this.state.guild.name}`;
+        else if (this.state.get().guild) {
+            this.options.screen.title = `Discord Terminal @ ${this.state.get().guild.name}`;
         }
         else {
             this.options.screen.title = "Discord Terminal";
@@ -514,7 +482,7 @@ export default class Display extends EventEmitter {
     }
 
     public getTags(): string[] {
-        return Object.keys(this.state.tags);
+        return Object.keys(this.state.get().tags);
     }
 
     public hasTag(name: string): boolean {
@@ -528,18 +496,18 @@ export default class Display extends EventEmitter {
             return name;
         }
 
-        return this.state.tags[name];
+        return this.state.get().tags[name];
     }
 
     public setTag(name: string, value: string): this {
-        this.state.tags[name] = value;
+        this.state.get().tags[name] = value;
 
         return this;
     }
 
     public deleteTag(name: string): boolean {
         if (this.hasTag(name)) {
-            delete this.state.tags[name];
+            delete this.state.get().tags[name];
 
             return true;
         }
@@ -577,9 +545,9 @@ export default class Display extends EventEmitter {
     public init(): this {
         const clipboard: string = clipboardy.readSync();
 
-        if (this.state.token) {
+        if (this.state.get().token) {
             this.context.message.system(`Attempting to login using saved token; Use {bold}${this.options.commandPrefix}forget{/bold} to forget the token`);
-            this.login(this.state.token);
+            this.login(this.state.get().token);
         }
         else if (Pattern.token.test(clipboard)) {
             this.context.message.system("Attempting to login using token in clipboard");
@@ -602,19 +570,19 @@ export default class Display extends EventEmitter {
     }
 
     public setActiveGuild(guild: Guild): this {
-        this.updateState({
+        this.state.update({
             guild
         });
 
-        this.context.message.system(`Switched to guild '{bold}${this.state.guild.name}{/bold}'`);
+        this.context.message.system(`Switched to guild '{bold}${this.state.get().guild.name}{/bold}'`);
 
-        const defaultChannel: TextChannel | null = Utils.findDefaultChannel(this.state.guild);
+        const defaultChannel: TextChannel | null = Utils.findDefaultChannel(this.state.get().guild);
 
         if (defaultChannel !== null) {
             this.setActiveChannel(defaultChannel);
         }
         else {
-            this.context.message.system(`Warning: Guild '${this.state.guild.name}' doesn't have any text channels`);
+            this.context.message.system(`Warning: Guild '${this.state.get().guild.name}' doesn't have any text channels`);
         }
 
         this.updateTitle();
@@ -640,11 +608,11 @@ export default class Display extends EventEmitter {
         }
 
         if (autoHide) {
-            if (this.state.autoHideHeaderTimeout) {
-                clearTimeout(this.state.autoHideHeaderTimeout);
+            if (this.state.get().autoHideHeaderTimeout) {
+                clearTimeout(this.state.get().autoHideHeaderTimeout);
             }
 
-            this.updateState({
+            this.state.update({
                 autoHideHeaderTimeout: setTimeout(this.hideHeader.bind(this), text.length * this.options.headerAutoHideTimeoutPerChar)
             });
         }
@@ -674,13 +642,13 @@ export default class Display extends EventEmitter {
     public setActiveChannel(channel: TextChannel): this {
         this.stopTyping();
 
-        this.updateState({
+        this.get().updateState({
             channel
         });
 
 
         this.updateTitle();
-        this.context.message.system(`Switched to channel '{bold}${this.state.channel.name}{/bold}'`);
+        this.context.message.system(`Switched to channel '{bold}${this.state.get().channel.name}{/bold}'`);
 
         return this;
     }
