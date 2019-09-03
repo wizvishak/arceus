@@ -2,8 +2,13 @@ import {Snowflake, TextChannel, Guild, Message} from "discord.js";
 import {EventEmitter} from "events";
 import fs from "fs";
 import {defaultState} from "./stateConstants";
+import Display from "../display";
 
-export type IState = {
+export interface IStateOptions {
+    readonly stateFilePath: string;
+}
+
+export interface IState {
     readonly channel?: TextChannel;
 
     readonly guild?: Guild;
@@ -44,10 +49,17 @@ export type IState = {
 }
 
 export default class State extends EventEmitter {
+    public readonly options: IStateOptions;
+
     protected state: IState;
 
-    public constructor(initialState?: Partial<IState>) {
+    protected readonly app: Display;
+
+    public constructor(app: Display, options: IStateOptions, initialState?: Partial<IState>) {
         super();
+
+        this.app = app;
+        this.options = options;
 
         // Initialize the state.
         this.state = {
@@ -91,7 +103,7 @@ export default class State extends EventEmitter {
             return new Promise<boolean>((resolve) => {
                 fs.readFile(this.options.stateFilePath, (error: Error, data: Buffer) => {
                     if (error) {
-                        this.context.message.system(`There was an error while reading the state file: ${error.message}`);
+                        this.app.message.system(`There was an error while reading the state file: ${error.message}`);
 
                         resolve(false);
 
@@ -105,7 +117,7 @@ export default class State extends EventEmitter {
                         themeData: this.state.themeData
                     };
 
-                    this.context.message.system(`Synced state @ ${this.options.stateFilePath} (${data.length} bytes)`);
+                    this.app.message.system(`Synced state @ ${this.options.stateFilePath} (${data.length} bytes)`);
 
                     resolve(true);
                 });
@@ -116,7 +128,7 @@ export default class State extends EventEmitter {
     }
 
     public save(): void {
-        this.appendSystemMessage("Saving application state ...");
+        this.app.message.system("Saving application state ...");
 
         const data: string = JSON.stringify({
             ...this.state,
@@ -129,6 +141,6 @@ export default class State extends EventEmitter {
         });
 
         fs.writeFileSync(this.options.stateFilePath, data);
-        this.appendSystemMessage(`Application state saved @ '${this.options.stateFilePath}' (${data.length} bytes)`);
+        this.app.message.system(`Application state saved @ '${this.options.stateFilePath}' (${data.length} bytes)`);
     }
 }

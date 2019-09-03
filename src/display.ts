@@ -11,9 +11,9 @@ import Pattern from "./pattern";
 import setupEvents from "./events";
 import setupInternalCommands from "./commands/internal";
 import {EventEmitter} from "events";
-import Context from "./core/context";
-import State, {IState} from "./state/state";
+import State, {IState, IStateOptions} from "./state/state";
 import {defaultState} from "./state/stateConstants";
+import MessageFactory from "./core/messageFactory";
 
 export type IAppNodes = {
     readonly messages: Widgets.BoxElement;
@@ -22,7 +22,7 @@ export type IAppNodes = {
     readonly header: Widgets.BoxElement;
 }
 
-export type IAppOptions = {
+export interface IAppOptions extends IStateOptions {
     readonly maxMessages: number;
 
     readonly screen: Widgets.Screen
@@ -30,8 +30,6 @@ export type IAppOptions = {
     readonly nodes: IAppNodes;
 
     readonly commandPrefix: string;
-
-    readonly stateFilePath: string;
 
     readonly headerAutoHideTimeoutPerChar: number;
 
@@ -62,9 +60,9 @@ export default class Display extends EventEmitter {
      */
     public readonly commands: Map<string, ICommandHandler>;
 
-    public readonly context: Context;
-
     public readonly state: State;
+
+    public readonly message: MessageFactory;
 
     public constructor(options?: Partial<IAppOptions>, commands: Map<string, ICommandHandler> = new Map()) {
         super();
@@ -76,8 +74,8 @@ export default class Display extends EventEmitter {
 
         this.client = new Client(options.clientOptions);
         this.commands = commands;
-        this.context = new Context();
-        this.state = new State(options.initialState);
+        this.message = new MessageFactory();
+        this.state = new State(this, this.options, options.initialState);
     }
 
     public async setup(init: boolean = true): Promise<this> {
@@ -89,7 +87,7 @@ export default class Display extends EventEmitter {
                 token: this.client.token
             });
 
-            this.context.message.system(`Successfully connected as {bold}${this.client.user.tag}{/bold}`);
+            this.message.system(`Successfully connected as {bold}${this.client.user.tag}{/bold}`);
 
             const firstGuild: Guild = this.client.guilds.first();
 
@@ -105,15 +103,15 @@ export default class Display extends EventEmitter {
         this.client.on("messageUpdate", this.handleMessage.bind(this));
 
         this.client.on("error", (error: Error) => {
-            this.context.message.system(`An error occurred within the client: ${error.message}`);
+            this.message.system(`An error occurred within the client: ${error.message}`);
         });
 
         this.client.on("guildCreate", (guild: Guild) => {
-            this.context.message.system(`Joined guild '{bold}${guild.name}{/bold}' (${guild.memberCount} members)`);
+            this.message.system(`Joined guild '{bold}${guild.name}{/bold}' (${guild.memberCount} members)`);
         });
 
         this.client.on("guildDelete", (guild: Guild) => {
-            this.context.message.system(`Left guild '{bold}${guild.name}{/bold}' (${guild.memberCount} members)`);
+            this.message.system(`Left guild '{bold}${guild.name}{/bold}' (${guild.memberCount} members)`);
         });
 
         // Append nodes.
@@ -146,7 +144,7 @@ export default class Display extends EventEmitter {
             return;
         }
         else if (this.state.get().trackList.includes(msg.author.id)) {
-            this.context.message.special("Track", msg.author.tag, msg.content);
+            this.message.special("Track", msg.author.tag, msg.content);
 
             return;
         }
@@ -171,10 +169,10 @@ export default class Display extends EventEmitter {
 
         if (msg.author.id === this.client.user.id) {
             if (msg.channel.type === "text") {
-                this.context.message.self(this.client.user.tag, content);
+                this.message.self(this.client.user.tag, content);
             }
             else if (msg.channel.type === "dm") {
-                this.context.message.special(`${chalk.green("=>")} DM`, (msg.channel as DMChannel).recipient.tag, content, "blue");
+                this.message.special(`${chalk.green("=>")} DM`, (msg.channel as DMChannel).recipient.tag, content, "blue");
             }
         }
         else if (this.state.get().guild && this.state.get().channel && msg.channel.id === this.state.get().channel.id) {
@@ -194,13 +192,13 @@ export default class Display extends EventEmitter {
                 }
             }
 
-            this.context.message.user(msg.author.tag, content, modifiers);
+            this.message.user(msg.author.tag, content, modifiers);
         }
         else if (msg.channel.type === "dm") {
-            this.context.message.special(`${chalk.green("<=")} DM`, msg.author.tag, content, "blue");
+            this.message.special(`${chalk.green("<=")} DM`, msg.author.tag, content, "blue");
         }
         else if (this.state.get().globalMessages) {
-            this.context.message.special("Global", msg.author.tag, content);
+            this.message.special("Global", msg.author.tag, content);
         }
     }
 
@@ -364,7 +362,7 @@ export default class Display extends EventEmitter {
                     fg: this.state.get().themeData.channels.foregroundColor,
 
                     // TODO: Not working
-                    bold: this.state.channel !== undefined && this.state.get().channel.id === channels[i].id,
+                    bold: this.state.get().channel !== undefined && this.state.get().channel.id === channels[i].id,
 
                     hover: {
                         bg: this.state.get().themeData.channels.backgroundColorHover,
@@ -418,7 +416,7 @@ export default class Display extends EventEmitter {
             this.setTheme(defaultState.theme, defaultState.themeData, 0);
         }
         else if (fs.existsSync(themePath)) {
-            this.context.message.system(`Loading theme '{bold}${name}{/bold}' ...`);
+            this.message.system(`Loading theme '{bold}${name}{/bold}' ...`);
 
             // TODO: Verify schema.
             const theme: any = fs.readFileSync(themePath).toString();
@@ -427,7 +425,7 @@ export default class Display extends EventEmitter {
             this.setTheme(name, JSON.parse(theme), theme.length);
         }
         else {
-            this.context.message.system("Such theme file could not be found (Are you sure thats under the {bold}themes{/bold} folder?)");
+            this.message.system("Such theme file could not be found (Are you sure thats under the {bold}themes{/bold} folder?)");
         }
 
         return this;
@@ -435,7 +433,7 @@ export default class Display extends EventEmitter {
 
     public setTheme(name: string, data: any, length: number): this {
         if (!data) {
-            this.context.message.system("Error while setting theme: No data was provided for the theme");
+            this.message.system("Error while setting theme: No data was provided for the theme");
 
             return this;
         }
@@ -462,7 +460,7 @@ export default class Display extends EventEmitter {
         this.options.nodes.header.style.bg = this.state.get().themeData.header.backgroundColor;
 
         this.updateChannels();
-        this.context.message.system(`Applied theme '${name}' (${length} bytes)`);
+        this.message.system(`Applied theme '${name}' (${length} bytes)`);
 
         return this;
     }
@@ -516,7 +514,7 @@ export default class Display extends EventEmitter {
     }
 
     public saveStateSync(): this {
-        this.context.message.system("Saving application state ...");
+        this.message.system("Saving application state ...");
 
         const data: string = JSON.stringify({
             ...this.state,
@@ -529,14 +527,14 @@ export default class Display extends EventEmitter {
         });
 
         fs.writeFileSync(this.options.stateFilePath, data);
-        this.context.message.system(`Application state saved @ '${this.options.stateFilePath}' (${data.length} bytes)`);
+        this.message.system(`Application state saved @ '${this.options.stateFilePath}' (${data.length} bytes)`);
 
         return this;
     }
 
     public login(token: string): this {
         this.client.login(token).catch((error: Error) => {
-            this.context.message.system(`Login failed: ${error.message}`);
+            this.message.system(`Login failed: ${error.message}`);
         });
 
         return this;
@@ -546,21 +544,21 @@ export default class Display extends EventEmitter {
         const clipboard: string = clipboardy.readSync();
 
         if (this.state.get().token) {
-            this.context.message.system(`Attempting to login using saved token; Use {bold}${this.options.commandPrefix}forget{/bold} to forget the token`);
+            this.message.system(`Attempting to login using saved token; Use {bold}${this.options.commandPrefix}forget{/bold} to forget the token`);
             this.login(this.state.get().token);
         }
         else if (Pattern.token.test(clipboard)) {
-            this.context.message.system("Attempting to login using token in clipboard");
+            this.message.system("Attempting to login using token in clipboard");
             this.login(clipboard);
         }
         else if (process.env.TOKEN !== undefined) {
-            this.context.message.system("Attempting to login using environment token");
+            this.message.system("Attempting to login using environment token");
             this.login(process.env.TOKEN);
         }
         else {
             this.options.nodes.input.setValue(`${this.options.commandPrefix}login `);
             this.showHeader("{bold}Pro Tip.{/bold} Set the environment variable {bold}TOKEN{/bold} to automagically login!");
-            this.context.message.system("Welcome! Please login using {bold}/login <token>{/bold} or {bold}/help{/bold} to view available commands");
+            this.message.system("Welcome! Please login using {bold}/login <token>{/bold} or {bold}/help{/bold} to view available commands");
         }
 
         this.setupEvents()
@@ -574,7 +572,7 @@ export default class Display extends EventEmitter {
             guild
         });
 
-        this.context.message.system(`Switched to guild '{bold}${this.state.get().guild.name}{/bold}'`);
+        this.message.system(`Switched to guild '{bold}${this.state.get().guild.name}{/bold}'`);
 
         const defaultChannel: TextChannel | null = Utils.findDefaultChannel(this.state.get().guild);
 
@@ -582,7 +580,7 @@ export default class Display extends EventEmitter {
             this.setActiveChannel(defaultChannel);
         }
         else {
-            this.context.message.system(`Warning: Guild '${this.state.get().guild.name}' doesn't have any text channels`);
+            this.message.system(`Warning: Guild '${this.state.get().guild.name}' doesn't have any text channels`);
         }
 
         this.updateTitle();
@@ -642,13 +640,13 @@ export default class Display extends EventEmitter {
     public setActiveChannel(channel: TextChannel): this {
         this.stopTyping();
 
-        this.get().updateState({
+        this.state.update({
             channel
         });
 
 
         this.updateTitle();
-        this.context.message.system(`Switched to channel '{bold}${this.state.get().channel.name}{/bold}'`);
+        this.message.system(`Switched to channel '{bold}${this.state.get().channel.name}{/bold}'`);
 
         return this;
     }
