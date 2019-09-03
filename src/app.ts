@@ -75,10 +75,10 @@ export default class App extends EventEmitter {
             ...options
         };
 
-        this.client = new Client(options.clientOptions);
+        this.client = new Client(this.options.clientOptions);
         this.commands = commands;
         this.message = new MessageFactory(this);
-        this.state = new State(this, this.options, options.initialState);
+        this.state = new State(this, this.options, this.options.initialState);
     }
 
     public async setup(init: boolean = true): Promise<this> {
