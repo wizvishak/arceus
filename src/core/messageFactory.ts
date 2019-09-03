@@ -1,10 +1,6 @@
 import chalk from "chalk";
 import App, {SpecialSenders} from "../app";
 
-export type MessageFactoryOptions = {
-
-};
-
 export default class MessageFactory {
     protected readonly app: App;
 
