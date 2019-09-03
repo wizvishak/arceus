@@ -6,7 +6,8 @@
     "scripts": {
         "build": "tsc",
         "start": "npm run build && node dist/index.js",
-        "prepublish": "npm run build"
+        "prepublish": "npm run build",
+        "test": "npm run build"
     },
     "keywords": [
         "discord",
