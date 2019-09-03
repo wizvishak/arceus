@@ -329,7 +329,7 @@ export default function setupInternalCommands(app: App): void {
 
     app.commands.set("clear", () => {
         app.options.nodes.messages.setContent("");
-        app.render();
+        app.render(true);
     });
 
     app.commands.set("c", (args: string[]) => {
