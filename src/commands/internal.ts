@@ -145,7 +145,7 @@ export default function setupInternalCommands(app: App): void {
     });
 
     app.commands.set("themes", () => {
-        const themesPath: string = path.join(__dirname, "../", "themes");
+        const themesPath: string = path.join(__dirname, "../../", "themes");
 
         if (fs.existsSync(themesPath)) {
             let files: string[] = fs.readdirSync(themesPath);
