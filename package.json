@@ -34,6 +34,6 @@
         "plugins"
     ],
     "bin": {
-        "dterm": "dist/app.js"
+        "dterm": "dist/index.js"
     }
 }
