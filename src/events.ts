@@ -59,26 +59,26 @@ export default function setupEvents(display: Display): void {
                 display.commands.get(base)!(args, this);
             }
             else {
-                display.appendSystemMessage(`Unknown command: ${base}`);
+                display.message.system(`Unknown command: ${base}`);
             }
         }
         else {
-            if (display.getState().muted) {
-                display.appendSystemMessage(`Message not sent; Muted mode is active. Please use {bold}${display.options.commandPrefix}mute{/bold} to toggle`);
+            if (display.state.get().muted) {
+                display.message.system(`Message not sent; Muted mode is active. Please use {bold}${display.options.commandPrefix}mute{/bold} to toggle`);
             }
-            else if (display.getState().guild && display.getState().channel) {
+            else if (display.state.get().guild && display.state.get().channel) {
                 let msg: string = input;
 
-                if (display.getState().encrypt) {
-                    msg = "$dt_" + Encryption.encrypt(msg, display.getState().decriptionKey);
+                if (display.state.get().encrypt) {
+                    msg = "$dt_" + Encryption.encrypt(msg, display.state.get().decriptionKey);
                 }
 
-                display.getState().channel.send(msg).catch((error: Error) => {
-                    display.appendSystemMessage(`Unable to send message: ${error.message}`);
+                display.state.get().channel.send(msg).catch((error: Error) => {
+                    display.message.system(`Unable to send message: ${error.message}`);
                 });
             }
             else {
-                display.appendSystemMessage("No active text channel");
+                display.message.system("No active text channel");
             }
         }
 
@@ -95,8 +95,8 @@ export default function setupEvents(display: Display): void {
     });
 
     display.options.nodes.input.key("up", () => {
-        if (display.getState().lastMessage) {
-            display.clearInput(`${display.options.commandPrefix}edit ${display.getState().lastMessage.id} ${display.getState().lastMessage.content}`);
+        if (display.state.get().lastMessage) {
+            display.clearInput(`${display.options.commandPrefix}edit ${display.state.get().lastMessage.id} ${display.state.get().lastMessage.content}`);
         }
     });
 
