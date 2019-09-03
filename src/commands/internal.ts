@@ -165,7 +165,7 @@ export default function setupInternalCommands(app: App): void {
 
     app.commands.set("tag", (args: string[]) => {
         if (!args[0]) {
-            const tags: string[] = app.tags.getTags();
+            const tags: string[] = app.tags.getAll();
 
             if (tags.length === 0) {
                 app.message.system("No tags have been set");
@@ -178,11 +178,11 @@ export default function setupInternalCommands(app: App): void {
             app.message.system(`Tags: ${tagsString}`);
         }
         else if (args.length === 2) {
-            app.tags.setTag(args[0], args[1]);
+            app.tags.set(args[0], args[1]);
             app.message.system(`Successfully saved tag '{bold}${args[0]}{/bold}'`);
         }
-        else if (args.length === 1 && app.tags.hasTag(args[0])) {
-            app.tags.deleteTag(args[0]);
+        else if (args.length === 1 && app.tags.has(args[0])) {
+            app.tags.delete(args[0]);
             app.message.system(`Successfully deleted tag '{bold}${args[0]}{/bold}'`);
         }
         else {

@@ -7,16 +7,16 @@ export default class Tags {
         this.state = state;
     }
 
-    public getTags(): string[] {
+    public getAll(): string[] {
         return Object.keys(this.state.get().tags);
     }
 
-    public hasTag(name: string): boolean {
-        return this.getTags().includes(name);
+    public has(name: string): boolean {
+        return this.getAll().includes(name);
     }
 
-    public getTag(name: string): string | null {
-        const keys: string[] = this.getTags();
+    public get(name: string): string | null {
+        const keys: string[] = this.getAll();
 
         if (!keys.includes(name)) {
             return name;
@@ -25,14 +25,14 @@ export default class Tags {
         return this.state.get().tags[name];
     }
 
-    public setTag(name: string, value: string): this {
+    public set(name: string, value: string): this {
         this.state.get().tags[name] = value;
 
         return this;
     }
 
-    public deleteTag(name: string): boolean {
-        if (this.hasTag(name)) {
+    public delete(name: string): boolean {
+        if (this.has(name)) {
             delete this.state.get().tags[name];
 
             return true;
