@@ -40,11 +40,11 @@ export default function setupEvents(app: App): void {
         let input: string = app.getInput(true);
 
         const splitInput: string[] = input.split(" ");
-        const tags: string[] = app.getTags();
+        const tags: string[] = app.tags.getTags();
 
         for (let i: number = 0; i < tags.length; i++) {
             while (splitInput.includes(`$${tags[i]}`)) {
-                splitInput[splitInput.indexOf(`$${tags[i]}`)] = app.getTag(tags[i]);
+                splitInput[splitInput.indexOf(`$${tags[i]}`)] = app.tags.getTag(tags[i]);
             }
         }
 

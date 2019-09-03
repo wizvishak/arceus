@@ -14,6 +14,7 @@ import {EventEmitter} from "events";
 import State, {IState, IStateOptions} from "./state/state";
 import {defaultState} from "./state/stateConstants";
 import MessageFactory from "./core/messageFactory";
+import Tags from "./tags";
 
 export type IAppNodes = {
     readonly messages: Widgets.BoxElement;
@@ -69,6 +70,8 @@ export default class App extends EventEmitter {
 
     public readonly message: MessageFactory;
 
+    public readonly tags: Tags;
+
     public constructor(options?: Partial<IAppOptions>, commands: Map<string, ICommandHandler> = new Map()) {
         super();
 
@@ -81,6 +84,7 @@ export default class App extends EventEmitter {
         this.client = new Client(this.options.clientOptions);
         this.commands = commands;
         this.message = new MessageFactory(this);
+        this.tags = new Tags(this.state);
     }
 
     public async setup(init: boolean = true): Promise<this> {
@@ -329,11 +333,11 @@ export default class App extends EventEmitter {
      * Destroy the client, save the state and exit
      * the application.
      */
-    public async shutdown(code: number = 0): Promise<void> {
+    public async shutdown(exitCode: number = 0): Promise<void> {
         this.stopTyping();
         await this.client.destroy();
         this.state.saveSync();
-        process.exit(code);
+        process.exit(exitCode);
     }
 
     public updateChannels(render: boolean = false): this {
@@ -482,40 +486,6 @@ export default class App extends EventEmitter {
         }
 
         return this;
-    }
-
-    public getTags(): string[] {
-        return Object.keys(this.state.get().tags);
-    }
-
-    public hasTag(name: string): boolean {
-        return this.getTags().includes(name);
-    }
-
-    public getTag(name: string): string | null {
-        const keys: string[] = this.getTags();
-
-        if (!keys.includes(name)) {
-            return name;
-        }
-
-        return this.state.get().tags[name];
-    }
-
-    public setTag(name: string, value: string): this {
-        this.state.get().tags[name] = value;
-
-        return this;
-    }
-
-    public deleteTag(name: string): boolean {
-        if (this.hasTag(name)) {
-            delete this.state.get().tags[name];
-
-            return true;
-        }
-
-        return false;
     }
 
     public login(token: string): this {
