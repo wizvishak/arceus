@@ -25,7 +25,21 @@ That's it! Although keep in mind that since the project is relatively new, you m
 
 Pst. Consider **starring** the repository if you like it! <3
 
+
+### Usage
+
+Once you've started the program, use `/login <token>` to connect to Discord.
+
+See the links below for information on retrieving login tokens:
+
+* [Retrieve a bot token](https://discordapp.com/developers/applications/me)
+* [Retrieve a user token](https://discordhelp.net/discord-token)
+
+You can also issue the `/help` command to display all available commands.
+
 ### Planned Features
+
+- [X] Re-write & expand codebase
 
 - [ ] Auto-complete pop-up
 
