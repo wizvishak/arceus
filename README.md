@@ -55,6 +55,8 @@ You can also issue the `/help` command to display all available commands.
 
 - [ ] Tested codebase (unit testing)
 
+- [ ] SSH support
+
 ### Tricks & Tips
 
 1. **Get moving quickly!**
