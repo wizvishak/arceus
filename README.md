@@ -8,7 +8,11 @@ Please note that this program is intended to be used with a **bot token** which 
 
 ### Screenshots
 
-![Discord Terminal](https://i.imgur.com/CBbhXTP.gif)
+## Linux preview
+![Linux preview](https://i.imgur.com/CBbhXTP.gif)
+
+## Windows 10 preview
+![Windows 10 previw](https://i.ibb.co/JK3SGdJ/e.png)
 
 ### Get Started
 
