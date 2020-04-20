@@ -507,13 +507,13 @@ export default class App extends EventEmitter {
             this.message.system("Attempting to login using token in clipboard");
             this.login(clipboard);
         }
-        else if (process.env.TOKEN !== undefined) {
+        else if (process.env.DTERM_TOKEN !== undefined) {
             this.message.system("Attempting to login using environment token");
-            this.login(process.env.TOKEN);
+            this.login(process.env.DTERM_TOKEN);
         }
         else {
             this.options.nodes.input.setValue(`${this.options.commandPrefix}login `);
-            this.showHeader("{bold}Pro Tip.{/bold} Set the environment variable {bold}TOKEN{/bold} to automagically login!");
+            this.showHeader("{bold}Pro Tip.{/bold} Set the environment variable {bold}DTERM_TOKEN{/bold} to automagically login!");
             this.message.system("Welcome! Please login using {bold}/login <token>{/bold} or {bold}/help{/bold} to view available commands");
         }
 
