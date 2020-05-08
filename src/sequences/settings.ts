@@ -14,7 +14,7 @@ const SILENCE = {
         MAX: 10000
     }
 };
-const memerWords: string[] = ["beg", "slots all", "dep all", "bal"];
+const memerWords: string[] = ["beg", "slots all", "dep all", "bal", "rankthot", "magik", "waifu", "foodporn"];
 const memerSilence = () => pickRandomRange(SILENCE.MEMER.MIN, SILENCE.MEMER.MAX);
 
 // TODO: Shiro Talk Generation
@@ -28,7 +28,13 @@ export const MemerTalk: Talk = new Talk({
 
 export const EXIT_CODE: number = 0;
 
-export const HOME = {
-    GUILD: "695323071526994051",
-    CHANNEL: "spam"
+export const SERVERS = {
+    $ATLAS: {
+        GUILD: "695323071526994051",
+        CHANNEL: "spam"
+    },
+    $ECHO: {
+        GUILD: "546619551903907861",
+        CHANNEL: "spam"
+    }
 }

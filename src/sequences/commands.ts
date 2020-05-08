@@ -11,7 +11,7 @@ const {
 
 const {
     EXIT_CODE,
-    HOME,
+    SERVERS,
     MemerTalk
 } = SequenceSettings;
 
@@ -22,6 +22,8 @@ export default function setupSpeechCommands(app: App): void {
 
     // Custom speech commands
     app.commands.set("talk", async (args: string[]) => {
+        const HOME = (args.length === 0) ? SERVERS.$ATLAS : SERVERS[`$${args[0].toUpperCase()}`];
+
         // Switch guild
         changeGuild(HOME.GUILD);
 
