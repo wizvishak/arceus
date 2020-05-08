@@ -1,4 +1,6 @@
-### ✨ Discord Terminal
+#### :test_tube: Experimental project built from [@cloudrex/discord-term](https://github.com/cloudrex/discord-term)
+
+### :desktop_computer: arceus
 
 An extensible Discord terminal client. Can be used with bot or user tokens.
 
