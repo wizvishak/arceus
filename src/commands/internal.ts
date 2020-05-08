@@ -4,6 +4,7 @@ import App from "../app";
 import {Snowflake, Message, User, TextChannel, Guild} from "discord.js";
 import {tips} from "../constant";
 import Utils from "../utils";
+import setupSpeechCommands from "../sequences/commands";
 
 export default function setupInternalCommands(app: App): void {
     app.commands.set("login", (args: string[]) => {
@@ -366,18 +367,5 @@ export default function setupInternalCommands(app: App): void {
     });
 
     // Custom commands
-
-    app.commands.set("talk", async (args: string[]) => {
-        const channel: TextChannel = app.state.get().channel;
-        const note: string[] = ["pls beg", "pls slots all", "pls dep all", "pls bal"];
-        const timer: number = 41000;
-        const pickRandom = (max: number) => Math.floor(Math.random() * Math.floor(max));
-        const talk = () => note[pickRandom(4)];
-
-        app.message.system(`{bold}${app.client.user.tag}{/bold} is talking now...`);
-        await channel.send(talk())
-        setInterval(async () => {
-            await channel.send(talk());
-        }, timer);
-    });
+    setupSpeechCommands(app);
 }
