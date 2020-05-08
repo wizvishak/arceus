@@ -10,11 +10,20 @@ const {
 const $MEMER_PREFIX: string = "pls ";
 const SILENCE = {
     MEMER: {
-        MIN: 5000,
+        MIN: 3000,
         MAX: 10000
     }
 };
-const memerWords: string[] = ["beg", "slots all", "dep all", "bal", "rankthot", "magik", "waifu", "foodporn"];
+const memerWords: string[] = [
+    "beg",
+    "slots all",
+    "dep all",
+    "bal",
+    "rankthot",
+    "waifu",
+    "foodporn",
+    "roast"
+];
 const memerSilence = () => pickRandomRange(SILENCE.MEMER.MIN, SILENCE.MEMER.MAX);
 
 // TODO: Shiro Talk Generation

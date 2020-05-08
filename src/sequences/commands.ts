@@ -33,6 +33,8 @@ export default function setupSpeechCommands(app: App): void {
         // Start talking
         const channel: TextChannel = app.state.get().channel;
         const talk = async () => {
+            app.stopTyping();
+            app.startTyping();
             await channel.send(MemerTalk.talk());
             Timer.active = setTimeout(talk, MemerTalk.silence);
         }
