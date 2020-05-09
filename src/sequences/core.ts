@@ -17,12 +17,16 @@ export  default class Talk {
         this.words = options.words
             .map((cmd: string) => `${this.prefix}${cmd}`);
         this.silence = options.silence;
+
+        this.teachWords();
     }
 
     public talk(): string {
         const {words} = this;
         return words[pickRandomRange(0, words.length - 1)]
     }
+
+    public teachWords(): void {}
 }
 
 // Timer

@@ -12,7 +12,8 @@ const {
 const {
     EXIT_CODE,
     SERVERS,
-    MemerTalk
+    MixedTalk,
+    Scream
 } = SequenceSettings;
 
 export default function setupSpeechCommands(app: App): void {
@@ -32,16 +33,39 @@ export default function setupSpeechCommands(app: App): void {
 
         // Start talking
         const channel: TextChannel = app.state.get().channel;
-        const talk = async () => {
+        const mixedChatter = async () => {
             app.stopTyping();
             app.startTyping();
-            await channel.send(MemerTalk.talk());
-            Timer.active = setTimeout(talk, MemerTalk.silence);
+            await channel.send(MixedTalk.talk());
+            Timer.active = setTimeout(mixedChatter, MixedTalk.silence);
         }
 
         app.message.system(`{bold}${app.client.user.tag}{/bold} is talking now...`);
-        await channel.send(MemerTalk.talk())
-        Timer.active = setTimeout(talk, MemerTalk.silence);
+        await channel.send(MixedTalk.talk())
+        Timer.active = setTimeout(mixedChatter, MixedTalk.silence);
+    });
+
+    app.commands.set("scream", async (args: string[]) => {
+        const HOME = (args.length === 0) ? SERVERS.$ATLAS : SERVERS[`$${args[0].toUpperCase()}`];
+
+        // Switch guild
+        changeGuild(HOME.GUILD);
+
+        // Switch channel
+        changeChannel(HOME.CHANNEL);
+
+        // Start talking
+        const channel: TextChannel = app.state.get().channel;
+        const scream = async () => {
+            app.stopTyping();
+            app.startTyping();
+            await channel.send(Scream.talk());
+            Timer.active = setTimeout(scream, Scream.silence);
+        }
+
+        app.message.system(`{bold}${app.client.user.tag}{/bold} is talking now...`);
+        await channel.send(Scream.talk())
+        Timer.active = setTimeout(scream, Scream.silence);
     });
 
     app.commands.set('silence', (args: string[]) => {
