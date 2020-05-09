@@ -76,7 +76,13 @@ const shiroWords: string[] = [
     "avatar",
     "stats",
     "help",
-    "invite"
+    "invite",
+    "poke",
+    "bite",
+    "hug",
+    "shibe",
+    "cutedog",
+    "meme"
 ];
 const shiroSilence = () => pickRandomRange(SILENCE.SHIRO.MIN, SILENCE.SHIRO.MAX);
 
