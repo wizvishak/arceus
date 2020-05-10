@@ -136,6 +136,6 @@ export const SERVERS = {
     },
     $ECHO: {
         GUILD: "546619551903907861",
-        CHANNEL: "spam"
+        CHANNEL: "tahiti"
     }
 }
