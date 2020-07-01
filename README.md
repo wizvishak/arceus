@@ -1,16 +1,14 @@
-#### :test_tube: Experimental project built from [@cloudrex/discord-term](https://github.com/cloudrex/discord-term)
+# :desktop_computer: arceus
 
-### :desktop_computer: arceus
+A Discord client, which is an extension of [@cloudrex/discord-term](https://github.com/cloudrex/discord-term), used to test discord bots in development.
 
-An extended Discord terminal client, a fork of [@cloudrex/discord-term](https://github.com/cloudrex/discord-term), I use to test discord bots that I write.
+### Note
 
-### Notes
+This project is a fork of [@cloudrex/discord-term](https://github.com/cloudrex/discord-term). If you appreciate the idea, find it helpful or draw inspiration from it, please give a shoutout to [@cloudrex](https://github.com/cloudrex). This is his idea and largely his work.
 
-This program is intended to be used with a **bot token** which is 100% compliant with Discord's Terms of Service.
+Also, the program is intended to be used with a **bot token** which is 100% compliant with Discord's *Terms of Service*.
 
-It is a fork of [@cloudrex/discord-term](https://github.com/cloudrex/discord-term). If you appreciate the idea, find it helpful or draw inspiration from it, please give a shoutout to [@cloudrex] for this is his idea and largely his work.
-
-### Screenshots
+## Information from original repo
 
 ## Linux preview
 ![Linux preview](https://i.imgur.com/CBbhXTP.gif)
@@ -31,9 +29,6 @@ That's it! Although keep in mind that since the project is relatively new, you m
 
 **This project has been tested and verified as working on native Ubuntu terminal and Windows command prompt + PowerShell using Node.js 10**
 
-Pst. Consider **starring** the repository if you like it! <3
-
-
 ### Usage
 
 Once you've started the program, use `/login <token>` to connect to Discord.
@@ -44,26 +39,6 @@ See the links below for information on retrieving login tokens:
 * [Retrieve a user token](https://discordhelp.net/discord-token)
 
 You can also issue the `/help` command to display all available commands.
-
-### Planned Features
-
-- [X] Re-write & expand codebase
-
-- [ ] Auto-complete pop-up
-
-- [ ] Status bar (current channel, guild, etc.)
-
-- [ ] Message logging (with file-based or database support)
-
-- [ ] Better, powerful plugin API
-
-- [ ] Visual plugin manager
-
-- [ ] UI re-write
-
-- [ ] Tested codebase (unit testing)
-
-- [ ] SSH support
 
 ### Tricks & Tips
 
@@ -95,20 +70,7 @@ You can also issue the `/help` command to display all available commands.
 
     In Linux, you can also just click the channels ;)
 
-2. **Change message format style**
-    Customizability is what this project is heading for. I'm planning on adding support for plugins in the future! As of now, you can edit your message format and theme.
-
-    Example:
-
-        $ /format {sender} ~> {message}
-
-        Or even more fancy:
-
-        $ /format [{sender}] => {message}
-
-    Try it out and match your style. Shiny!
-
-3. **Change themes**
+2. **Change themes**
     Changing themes is easy. You can switch between themes using the **/themes** command.
 
     Example:
@@ -150,10 +112,3 @@ You can also issue the `/help` command to display all available commands.
     **Note**: Your friend(s) must have set the same password in order to view your messages!
 
     Keep in mind that your password cannot contain spaces.
-
-Thanks to all these wonderful people for contributing to the project:
-
-* [@AL1L](https://github.com/AL1L)
-* [@anirudhbs](https://github.com/anirudhbs)
-* [@jellz](https://github.com/jellz)
-* [@JustCaptcha](https://github.com/JustCaptcha)
