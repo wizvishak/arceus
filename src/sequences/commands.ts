@@ -4,6 +4,7 @@ import App from "../app";
 import * as SequenceUtil from "./utils";
 import * as SequenceSettings from "./settings";
 import * as AmelieUtil from "./amelie/utils";
+import {DISCORD_SERVERS} from "./amelie/settings";
 
 const {
     EXIT_CODE,
@@ -72,7 +73,9 @@ export default function setupSpeechCommands(app: App): void {
     });
 
     app.commands.set('amelie', async (args: string[]) => {
-        const HOME = (args.length === 0) ? SERVERS.$ATLAS : SERVERS[`$${args[0].toUpperCase()}`];
+        const HOME = (args.length === 0)
+            ? DISCORD_SERVERS.$ATLAS
+            : DISCORD_SERVERS[`$${args[0].toUpperCase()}`];
 
         // Switch guild
         changeGuild(HOME.GUILD);
