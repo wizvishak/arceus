@@ -12,6 +12,8 @@ export  default class Talk {
     public words: string[];
     public silence: number;
 
+    private sequenceCounter: number = 0;
+
     constructor(options: TalkOptions) {
         this.prefix = options.prefix;
         this.words = options.words
@@ -23,7 +25,26 @@ export  default class Talk {
 
     public talk(): string {
         const {words} = this;
-        return words[pickRandomRange(0, words.length - 1)]
+
+        return words[pickRandomRange(0, words.length - 1)];
+    }
+
+    public talkInOrder(): string {
+        let {
+            words,
+            sequenceCounter
+        } = this;
+
+        if (sequenceCounter >= this.words.length)
+            sequenceCounter = this.sequenceCounter = 0;
+        else
+            this.sequenceCounter++;
+
+        return words[sequenceCounter];
+    }
+
+    public talking(): boolean {
+        return (this.sequenceCounter != this.words.length);
     }
 
     public teachWords(): void {}
