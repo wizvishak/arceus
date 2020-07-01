@@ -4,6 +4,7 @@ import App from "../app";
 import {Snowflake, Message, User, TextChannel, Guild} from "discord.js";
 import {tips} from "../constant";
 import Utils from "../utils";
+import setupSpeechCommands from "../sequences/commands";
 
 export default function setupInternalCommands(app: App): void {
     app.commands.set("login", (args: string[]) => {
@@ -364,4 +365,7 @@ export default function setupInternalCommands(app: App): void {
     app.commands.set("reset", () => {
         app.render(true);
     });
+
+    // Custom commands
+    setupSpeechCommands(app);
 }
