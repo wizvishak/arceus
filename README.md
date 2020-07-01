@@ -2,11 +2,13 @@
 
 ### :desktop_computer: arceus
 
-An extensible Discord terminal client. Can be used with bot or user tokens.
+An extended Discord terminal client, a fork of [@cloudrex/discord-term](https://github.com/cloudrex/discord-term), I use to test discord bots that I write.
 
-**Disclaimer**: So-called "self-bots" are against Discord's Terms of Service and therefore discouraged. I am not responsible for any loss or restriction whatsoever caused by using self-bots or this software. That being said, there's no one stopping you from risking using an account, so go head!
+### Notes
 
-Please note that this program is intended to be used with a **bot token** which is 100% compliant with Discord's Terms of Service.
+This program is intended to be used with a **bot token** which is 100% compliant with Discord's Terms of Service.
+
+It is a fork of [@cloudrex/discord-term](https://github.com/cloudrex/discord-term). If you appreciate the idea, find it helpful or draw inspiration from it, please give a shoutout to [@cloudrex] for this is his idea and largely his work.
 
 ### Screenshots
 
