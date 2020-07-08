@@ -5,6 +5,7 @@ export const SILENCE = {
     }
 };
 
+//export const $AMELIE_PREFIX: string = "r!";
 export const $AMELIE_PREFIX: string = "+";
 
 // General talk sequence
@@ -38,7 +39,12 @@ export const SALLY_WORDS: string[] = [
     "sally",
     "sally events",
     "sally events general",
-    "sally events role"
+    "sally events role",
+    "sally when king of castle",
+    "sally when",
+    "sally when condor egg",
+    "sally when king of Thecastle",
+    "sally when colddeAdHandS"
 ];
 
 // Amelie talk sequence

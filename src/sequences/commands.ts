@@ -1,5 +1,5 @@
 import {TextChannel} from "discord.js";
-import {Timer} from "./core";
+import Talk, {Timer} from "./core";
 import App from "../app";
 import * as SequenceUtil from "./utils";
 import * as SequenceSettings from "./settings";
@@ -13,7 +13,10 @@ const {
     Scream
 } = SequenceSettings;
 
-const { AmelieTalk } = AmelieUtil;
+const {
+    AmelieTalk,
+    SallyTalk
+} = AmelieUtil;
 
 export default function setupSpeechCommands(app: App): void {
     // Utils
@@ -45,7 +48,7 @@ export default function setupSpeechCommands(app: App): void {
     });
 
     app.commands.set("scream", async (args: string[]) => {
-        const HOME = (args.length === 0) ? SERVERS.$ATLAS : SERVERS[`$${args[0].toUpperCase()}`];
+        const HOME = (args.length === 0) ? SERVERS.$ATLAS : SERVERS[`${args[0].toUpperCase()}`];
 
         // Switch guild
         changeGuild(HOME.GUILD);
@@ -73,9 +76,10 @@ export default function setupSpeechCommands(app: App): void {
     });
 
     app.commands.set('amelie', async (args: string[]) => {
-        const HOME = (args.length === 0)
-            ? DISCORD_SERVERS.$ATLAS
-            : DISCORD_SERVERS[`$${args[0].toUpperCase()}`];
+        const HOME = DISCORD_SERVERS.$ATLAS,
+            amelieTalk: Talk = (args.length === 0)
+                ? AmelieTalk
+                : SallyTalk;
 
         // Switch guild
         changeGuild(HOME.GUILD);
@@ -88,15 +92,15 @@ export default function setupSpeechCommands(app: App): void {
         const amelie = async () => {
             app.stopTyping();
             app.startTyping();
-            await channel.send(AmelieTalk.talkInOrder());
-            if(AmelieTalk.talking()) {
-                Timer.active = setTimeout(amelie, AmelieTalk.silence);
+            await channel.send(amelieTalk.talkInOrder());
+            if(amelieTalk.talking()) {
+                Timer.active = setTimeout(amelie, amelieTalk.silence);
             }
         }
 
         app.message.system(`{bold}${app.client.user.tag}{/bold} is talking to @Amelie now...`);
-        await channel.send(AmelieTalk.talkInOrder());
-        Timer.active = setTimeout(amelie, AmelieTalk.silence);
+        await channel.send(amelieTalk.talkInOrder());
+        Timer.active = setTimeout(amelie, amelieTalk.silence);
     });
 
     app.commands.set('x', async (args: string[]) => {
